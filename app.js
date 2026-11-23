@@ -1042,16 +1042,26 @@ function finishTuto() {
   $('#tuto').close(); say('idle'); save(); renderAll();
 }
 
+// emplacements des 9 massifs dans la scène : [x %, bas %] (rangée du fond -> devant)
+const SPOTS = [[15, 55], [34, 53], [53, 55], [10, 71], [30, 70], [50, 72], [8, 90], [28, 89], [47, 91]];
+const GARDEN_DECOR = `${VIEWS.ciel.html()}<span class="hill h1"></span><span class="hill h2"></span>
+  <span class="fence"></span><span class="gate"></span><span class="lawn"></span>
+  <svg class="path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M56 100C62 82 80 66 77 47L83 47C88 66 80 84 78 100Z"/></svg>
+  <span class="tree">🌳</span><span class="bush">🌿</span>
+  <span class="fly f1">🦋</span><span class="fly f2">🦋</span>
+  ${Array.from({ length: 8 }, (_, i) => `<i class="firefly" style="left:${8 + i * 12}%;top:${50 + (i * 17) % 40}%;animation-delay:-${i * 0.9}s"></i>`).join('')}`;
+
 function renderGarden() {
   const ev = eventOf(today());
   if (selSeed && !S.inv[selSeed]) selSeed = null;
   $('#gardenHint').textContent = selSeed
-    ? `Clique sur une parcelle vide pour planter : ${PLANTS[selSeed].name}`
-    : 'Choisis une graine dans ton sac, puis clique sur une parcelle. Les plantes prêtes ✨ se récoltent d\'un clic.';
-  $('#plots').innerHTML = S.plots.map((p, i) => {
-    if (!p) return `<button class="plot empty" data-plot="${i}" aria-label="Parcelle vide">${selSeed ? '＋' : ''}</button>`;
+    ? `Clique sur un coin de terre vide pour planter : ${PLANTS[selSeed].name}`
+    : 'Choisis une graine dans ton sac, puis clique sur un coin de terre. Les plantes prêtes ✨ se récoltent d\'un clic.';
+  $('#plots').innerHTML = GARDEN_DECOR + S.plots.map((p, i) => {
+    const [x, y] = SPOTS[i % SPOTS.length], pos = `style="--x:${x}%;--y:${y}%;--s:${(0.6 + (y - 53) / 38 * 0.4).toFixed(2)};z-index:${2 + Math.floor(i / 3)}"`;
+    if (!p) return `<button class="spot empty ${selSeed ? 'can' : ''}" data-plot="${i}" ${pos} aria-label="Coin de terre vide">${selSeed ? '<span class="plant">＋</span>' : ''}</button>`;
     const P = PLANTS[p.type], r = Math.min(1, p.g / P.grow);
-    return `<button class="plot ${r >= 1 ? 'ready' : ''}" data-plot="${i}" title="${P.name}" aria-label="${P.name}, ${Math.round(r * 100)} %">
+    return `<button class="spot ${r >= 1 ? 'ready' : ''}" data-plot="${i}" ${pos} title="${P.name}" aria-label="${P.name}, ${Math.round(r * 100)} %">
       <span class="plant">${P.stages[r >= 1 ? 2 : r >= 0.4 ? 1 : 0]}</span><span class="bar"><i style="width:${r * 100}%"></i></span></button>`;
   }).join('');
   const inv = Object.entries(S.inv).filter(([, n]) => n > 0);
