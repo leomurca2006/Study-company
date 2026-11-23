@@ -496,3 +496,42 @@ body.night .v-neige::after { background: #C9B6E8; }
 @keyframes bolt { 0%, 88%, 95%, 100% { opacity: 0; } 89%, 94% { opacity: 1; } }
 canvas.ville { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; cursor: pointer; }
 .window .rain, .window .frame, .flash { pointer-events: none; } /* laisse passer les clics vers la mini ville */
+
+/* saisons : papiers peints (spécificité plus forte que les chambres, y compris la nuit) */
+.scene[data-saison=printemps] .wall { background: radial-gradient(circle, #FFD99A 0 2px, #FF8FE6 2.5px 5px, transparent 5.5px) 0 0 / 34px 34px, radial-gradient(circle, #FFD99A 0 2px, #FFB8EE 2.5px 5px, transparent 5.5px) 17px 17px / 34px 34px, #FBE9FF; }
+.scene[data-saison=printemps] .floor { background: repeating-linear-gradient(90deg, #B8F5E0 0 40px, #8FF0D0 40px 44px); }
+.scene[data-saison=ete] .wall { background: repeating-linear-gradient(90deg, #D9F7FF 0 28px, #FFF7FE 28px 56px); }
+.scene[data-saison=ete] .floor { background: radial-gradient(#FFC46B 1.2px, transparent 1.8px) 0 0 / 14px 12px, #FFE9C4; }
+.scene[data-saison=automne] .wall { background: repeating-linear-gradient(90deg, transparent 0 46px, #FFC46B55 46px 50px), repeating-linear-gradient(0deg, transparent 0 46px, #FF8FE644 46px 50px), #FFE9C4; }
+.scene[data-saison=automne] .floor { background: repeating-linear-gradient(90deg, #8E5BB5 0 60px, #74449B 60px 62px); }
+.scene[data-saison=hiver] .wall { background: radial-gradient(#fff 1.4px, transparent 2px) 0 0 / 30px 30px, radial-gradient(#BFF6FF 1.2px, transparent 1.8px) 15px 15px / 30px 30px, linear-gradient(180deg, #D9F7FF, #E7CFF5); }
+.scene[data-saison=hiver] .floor { background: repeating-linear-gradient(90deg, #C9A6E4 0 56px, #B48ED6 56px 58px); }
+body.night .scene:is([data-saison=printemps], [data-saison=ete], [data-saison=automne], [data-saison=hiver]) :is(.wall, .floor)::after {
+  content: ""; position: absolute; inset: 0; background: #5a3a9a; mix-blend-mode: multiply;
+}
+.season-nav {
+  position: absolute; top: 66%; transform: translateY(-50%); z-index: 3; width: 34px; height: 34px; padding: 0;
+  border: 2px solid var(--line); border-radius: 50%; background: var(--card); color: var(--ink);
+  font-size: 1.4rem; line-height: 1; font-weight: 800; opacity: .8; box-shadow: 0 3px 0 var(--shadow);
+}
+.season-nav:hover, .season-nav:focus-visible { opacity: 1; }
+.season-nav.prev { left: 8px; } .season-nav.next { right: 8px; }
+body.night .season-nav { box-shadow: 0 0 8px rgba(255, 79, 216, .45); }
+.scene { touch-action: pan-y; }
+
+/* chambres de saison : décor (ne capte pas les clics, pour laisser les compagnons cliquables) */
+.sd { position: absolute; line-height: 1; pointer-events: none; filter: drop-shadow(0 3px 0 #0002); }
+.bunting { left: 3%; right: 3%; top: 4px; display: flex; justify-content: space-between; padding-top: 6px; border-top: 2px solid #8E5BB5; border-radius: 50% 50% 0 0 / 10px 10px 0 0; filter: none; }
+.bunting i { font-style: normal; font-size: 1.1rem; }
+.bunting.flags i { width: 22px; height: 26px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.bunting.flags i:nth-child(4n+1) { background: #FF4FD8; } .bunting.flags i:nth-child(4n+2) { background: #4FE3FF; }
+.bunting.flags i:nth-child(4n+3) { background: #FFC46B; } .bunting.flags i:nth-child(4n) { background: #4FE3B0; }
+.bunting.lights b { display: block; width: 9px; height: 13px; border-radius: 50% 50% 45% 45%; background: var(--c); box-shadow: 0 0 8px var(--c); animation: twinkle 1.6s ease-in-out infinite; }
+.bunting.lights i:nth-child(even) b { animation-delay: -.8s; }
+@keyframes twinkle { 50% { opacity: .45; box-shadow: none; } }
+body.night .bunting.lights b { box-shadow: 0 0 12px 2px var(--c); }
+.sd.fall { top: -30px; font-size: 1rem; animation: leaf linear infinite; }
+@keyframes leaf { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 10% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(50px, 400px) rotate(320deg); opacity: 0; } }
+.sd.flutter { animation: flutter 9s ease-in-out infinite; }
+.sd.cup::after { content: ""; position: absolute; left: 45%; top: -12px; width: 5px; height: 12px; border-left: 2px solid #fffb; border-radius: 50%; animation: steam 2s ease-in-out infinite; }
+@keyframes steam { 0% { opacity: 0; transform: translateY(4px); } 50% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }

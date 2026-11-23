@@ -91,7 +91,7 @@ const DEFAULT = {
   night: matchMedia('(prefers-color-scheme: dark)').matches, vol: { lofi: 0, rain: 0, wind: 0, cars: 0, cafe: 0, foret: 0 },
   eggs: [], hatched: 0, ach: [], freezes: 0, harvested: 0, bought: 0,
   sounds: ['lofi', 'rain', 'wind', 'cars'], theme: 'lavande', themes: ['lavande'],
-  room: 'douce', rooms: ['douce'], view: 'ciel', views: ['ciel'],
+  room: 'douce', rooms: ['douce'], season: '', view: 'ciel', views: ['ciel'],
   tx: [], weekGoal: 5, exams: [], todos: [], cards: [], notes: '', font: 1, reviewSeen: null,
 };
 let S;
@@ -320,7 +320,24 @@ function say(kind) { // tirage au hasard, jamais deux fois la même réplique d'
 }
 const talk = () => say('idle');
 
+// ---------- Saisons : base (murs, sol, ce qui tombe) choisie avec les flèches de la scène ----------
+// '' = la chambre achetée, sans saison. Les murs et sols sont en CSS (.scene[data-saison=…]).
+const sd = (style, x, cls = '') => `<span class="sd ${cls}" style="${style}">${x}</span>`;  // .sd ne capte pas les clics
+const bunting = (cls, items) => `<div class="sd bunting ${cls}">${items.map((x, i) => `<i style="--i:${i}">${x}</i>`).join('')}</div>`;
+const falling = (items, n) => Array.from({ length: n }, (_, i) =>
+  sd(`left:${8 + i * 84 / n}%;animation-duration:${7 + i % 3 * 2}s;animation-delay:-${(i * 2.3).toFixed(1)}s`, items[i % items.length], 'fall')).join('');
+const LIGHTS = ['#FF4FD8', '#4FE3FF', '#FFC46B', '#4FE3B0'];
+const SEASONS = {
+  '':        { name: 'Ma chambre', icon: '🛏️', base: '' },
+  printemps: { name: 'Printemps', icon: '🌸', base: falling(['🌸', '🌸', '🌼'], 5) },
+  ete:       { name: 'Été', icon: '☀️', base: '' },
+  automne:   { name: 'Automne', icon: '🍂', base: falling(['🍂', '🍁', '🍂'], 6) },
+  hiver:     { name: 'Hiver', icon: '❄️', base: '' },
+};
+const SEASON_KEYS = Object.keys(SEASONS);
+
 // ---------- Décoration de la pièce ----------
+// season : l'objet ne s'affiche que pendant cette saison (catégorie Saisons de la boutique)
 const DECOR = {
   etagere:     { name: 'Étagère', icon: '📚', price: 0, html: '<div class="d shelf"><span>📚</span><span>🕯️</span><span>🌵</span></div>' },
   plante:      { name: 'Grande plante', icon: '🪴', price: 0, html: '<span class="d" style="right:6%;bottom:40px;font-size:2.8rem">🪴</span>' },
@@ -337,6 +354,26 @@ const DECOR = {
   rideaux:     { name: 'Rideaux roses', icon: '🎀', price: 300, html: '<div class="d curtain l"></div><div class="d curtain r"></div>' },
   poster:      { name: 'Poster lune', icon: '🌙', price: 130, html: '<span class="d poster">🌙</span>' },
   lampe:       { name: 'Lanterne', icon: '🏮', price: 160, html: '<span class="d hang" style="right:auto;left:16%">🏮</span>' },
+  fleursGuir:  { season: 'printemps', name: 'Guirlande de fleurs', icon: '🌸', price: 90, html: bunting('emoji', ['🌸', '🌼', '🌸', '🌷', '🌸', '🌼', '🌸', '🌷']) },
+  tulipes:     { season: 'printemps', name: 'Grande tulipe', icon: '🌷', price: 80, html: sd('left:2%;bottom:24px;font-size:3.4rem', '🌷') + sd('left:13%;bottom:10px;font-size:1.6rem', '🌱') },
+  poussin:     { season: 'printemps', name: 'Poussin et panier', icon: '🐣', price: 70, html: sd('right:3%;bottom:20px;font-size:2rem', '🐣') + sd('right:11%;bottom:12px;font-size:1.8rem', '🧺') },
+  the:         { season: 'printemps', name: 'Thé et fraise', icon: '🫖', price: 60, html: sd('left:24%;top:204px;font-size:1.5rem', '🫖') + sd('right:24%;top:206px;font-size:1.4rem', '🍓') },
+  papillon:    { season: 'printemps', name: 'Papillon', icon: '🦋', price: 50, html: sd('left:30%;top:60px;font-size:1.2rem', '🦋', 'flutter') },
+  fanions:     { season: 'ete', name: 'Fanions', icon: '🚩', price: 90, html: bunting('flags', Array(10).fill('')) },
+  palmier:     { season: 'ete', name: 'Palmier', icon: '🌴', price: 120, html: sd('left:1%;bottom:22px;font-size:5rem', '🌴') + sd('left:15%;bottom:8px;font-size:1.6rem', '🏐') },
+  bouee:       { season: 'ete', name: 'Bouée', icon: '🛟', price: 60, html: sd('right:5%;top:46px;font-size:2.4rem', '🛟') },
+  plage:       { season: 'ete', name: 'Coquillage et tongs', icon: '🐚', price: 50, html: sd('right:3%;bottom:16px;font-size:1.8rem', '🐚') + sd('right:11%;bottom:10px;font-size:1.6rem', '🩴') },
+  cocktail:    { season: 'ete', name: 'Cocktail et pastèque', icon: '🍹', price: 60, html: sd('left:24%;top:202px;font-size:1.6rem', '🍹') + sd('right:24%;top:206px;font-size:1.4rem', '🍉') },
+  feuillesGuir:{ season: 'automne', name: 'Guirlande de feuilles', icon: '🍁', price: 90, html: bunting('emoji', ['🍁', '🍂', '🍁', '🍂', '🍁', '🍂', '🍁', '🍂']) },
+  citrouilles: { season: 'automne', name: 'Citrouilles', icon: '🎃', price: 100, html: sd('left:2%;bottom:14px;font-size:2.8rem', '🎃') + sd('left:12%;bottom:8px;font-size:1.8rem', '🎃') + sd('left:18%;bottom:12px;font-size:1.3rem', '🍄') },
+  herisson:    { season: 'automne', name: 'Hérisson', icon: '🦔', price: 80, html: sd('right:3%;bottom:16px;font-size:2rem', '🦔') + sd('right:11%;bottom:10px;font-size:1.6rem', '🍎') },
+  gouter:      { season: 'automne', name: 'Goûter d\'automne', icon: '🥧', price: 70, html: sd('left:24%;top:204px;font-size:1.5rem', '☕', 'cup') + sd('right:24%;top:204px;font-size:1.5rem', '🥧') + sd('right:30%;top:204px;font-size:1.3rem', '🕯️') },
+  noelGuir:    { season: 'hiver', name: 'Guirlande de Noël', icon: '💡', price: 110, html: bunting('lights', LIGHTS.concat(LIGHTS, LIGHTS).map(c => `<b style="--c:${c}"></b>`)) },
+  sapin:       { season: 'hiver', name: 'Sapin et cadeaux', icon: '🎄', price: 150, html: sd('left:1%;bottom:26px;font-size:5.4rem', '🎄') + sd('left:12%;bottom:8px;font-size:1.6rem', '🎁') + sd('left:3%;bottom:4px;font-size:1.4rem', '🎁') },
+  pereNoel:    { season: 'hiver', name: 'Père Noël', icon: '🎅', price: 130, html: sd('right:3%;bottom:20px;font-size:2.6rem', '🎅') },
+  bonhomme:    { season: 'hiver', name: 'Bonhomme de neige', icon: '⛄', price: 70, html: sd('right:13%;bottom:10px;font-size:1.6rem', '⛄') },
+  chaussettes: { season: 'hiver', name: 'Chaussettes et cloche', icon: '🧦', price: 60, html: sd('right:7%;top:34px;font-size:1.5rem', '🧦🧦') + sd('left:6%;top:150px;font-size:1.6rem', '🔔') },
+  chocolat:    { season: 'hiver', name: 'Chocolat chaud', icon: '☕', price: 80, html: sd('left:24%;top:204px;font-size:1.5rem', '☕', 'cup') + sd('left:30%;top:208px;font-size:1.2rem', '🍪') + sd('right:24%;top:204px;font-size:1.4rem', '🕯️') },
 };
 
 // ---------- Boutique : ambiances et thèmes ----------
@@ -428,14 +465,15 @@ const VIEWS = {
   ville: { name: 'Mini ville', icon: '🌃', price: 450, desc: 'Une ville en pixels qui vit la nuit. Clique sur un immeuble !',
     html: () => `<canvas class="ville" width="${VILLE.W}" height="${VILLE.H}" aria-hidden="true"></canvas>` },
 };
-function roomHTML(trying, eqMain = S.equip, eqPartner = S.partnerEquip, view = S.view) { // trying : objet affiché à l'essai, sans l'acheter
-  let on = Object.keys(DECOR).filter(id => S.decor.on.includes(id));
+function roomHTML(trying, eqMain = S.equip, eqPartner = S.partnerEquip, view = S.view, season = S.season) { // trying : objet affiché à l'essai, sans l'acheter
+  let on = Object.keys(DECOR).filter(id => S.decor.on.includes(id) && (!DECOR[id].season || DECOR[id].season === season));
   if (trying && !on.includes(trying)) on = [...on.filter(id => !(DECOR[trying].rug && DECOR[id].rug)), trying];
   const rug = on.map(id => DECOR[id].rug).find(Boolean);
   return `<div class="wall"></div><div class="floor"></div>
-    <div class="window">${VIEWS[view].html()}<div class="rain"${view === 'orage' ? ' style="--rain:.9"' : ''}></div><div class="frame"></div></div>
+    <div class="window">${VIEWS[view].html()}<div class="rain"${view === 'orage' ? ' style="--rain:.9"' : ''}></div><div class="frame"></div></div>${SEASONS[season].base}
     ${on.map(id => DECOR[id].html || '').join('')}
-    ${rug ? `<div class="rug" style="background:${rug}"></div>` : ''}${petsHTML(S.species, S.partner, eqMain, eqPartner)}`;
+    ${rug ? `<div class="rug" style="background:${rug}"></div>` : ''}${petsHTML(S.species, S.partner, eqMain, eqPartner)}
+    <button class="season-nav prev" data-season-step="-1" aria-label="Saison précédente">‹</button><button class="season-nav next" data-season-step="1" aria-label="Saison suivante">›</button>`;
 }
 
 // ---------- Vue « Mini ville » : la ville en pixel-art du portfolio, en petit ----------
@@ -1123,7 +1161,7 @@ function howToGet(k) {
 
 function renderCompanions() {
   $$('.scene').forEach(s => s.classList.toggle('has-partner', S.partner));
-  $('#scene').dataset.chambre = S.room;
+  $('#scene').dataset.chambre = S.room; $('#scene').dataset.saison = S.season;
   $('#scene .room').innerHTML = roomHTML();
   VILLE.sync();
   const sel = selPet(), owned = S.pets.includes(sel), pvPartner = S.partner || preview === 'pingouine';
@@ -1173,7 +1211,10 @@ function renderCompanions() {
 let tryRoom = null, tryView = null; // chambre et vue essayées dans la boutique
 // thèmes, chambres, vues : « ✓ Actif », « Utiliser » ou le prix
 const useBtn = (owned, active, attr, price) => active ? '<span class="owned">✓ Actif</span>' : owned ? `<button class="btn" ${attr}>Utiliser</button>` : buyBtn(attr, price);
-const SHOP_CATS = { oeufs: '🥚 Œufs', accessoires: '👗 Accessoires', decor: '🏠 Décor', chambres: '🛏️ Chambres', vues: '🪟 Vues', ambiances: '🎧 Ambiances', utilitaires: '🧰 Utilitaires' };
+const decorItem = ([id, d]) =>
+  shopItem(`<button class="preview-btn ${tryDecor === id ? 'trying' : ''}" data-try-decor="${id}" aria-label="Essayer : ${d.name}">${d.rug ? `<span class="rug-swatch" style="background:${d.rug}"></span>` : `<span class="emoji">${d.icon}</span>`}</button>`,
+      d.name, `data-decor="${id}"`, S.decor.owned.includes(id), S.decor.on.includes(id), d.price, 'Ranger', 'Placer');
+const SHOP_CATS = { oeufs: '🥚 Œufs', accessoires: '👗 Accessoires', decor: '🏠 Décor', saisons: '🍂 Saisons', chambres: '🛏️ Chambres', vues: '🪟 Vues', ambiances: '🎧 Ambiances', utilitaires: '🧰 Utilitaires' };
 const SHOP = {
   oeufs: () => `<p class="hint">Un œuf éclot après un temps de révision et donne un compagnon que tu n'as pas encore. Il se couve dans l'onglet Collection.</p><div class="grid">` +
     Object.entries(EGGS).map(([k, E]) => card(`<span class="egg-icon" style="--r:${E.color}">🥚</span>`, E.name,
@@ -1192,9 +1233,10 @@ const SHOP = {
             : shopItem(pv, c.name, `data-cos="${id}"`, S.owned.includes(id), eq[slot] === id, c.price, 'Retirer', 'Porter');
         }).join('') + '</div>').join('');
   },
-  decor: () => '<div class="grid">' + Object.entries(DECOR).map(([id, d]) =>
-    shopItem(`<button class="preview-btn ${tryDecor === id ? 'trying' : ''}" data-try-decor="${id}" aria-label="Essayer : ${d.name}">${d.rug ? `<span class="rug-swatch" style="background:${d.rug}"></span>` : `<span class="emoji">${d.icon}</span>`}</button>`,
-      d.name, `data-decor="${id}"`, S.decor.owned.includes(id), S.decor.on.includes(id), d.price, 'Ranger', 'Placer')).join('') + '</div>',
+  decor: () => '<div class="grid">' + Object.entries(DECOR).filter(([, d]) => !d.season).map(decorItem).join('') + '</div>',
+  saisons: () => '<p class="hint">Ces objets n\'apparaissent que pendant leur saison. Change de saison avec les flèches ‹ › de ta chambre.</p>' +
+    SEASON_KEYS.filter(Boolean).map(k => `<h3 class="slot-title">${SEASONS[k].icon} ${SEASONS[k].name}</h3><div class="grid">` +
+      Object.entries(DECOR).filter(([, d]) => d.season === k).map(decorItem).join('') + '</div>').join(''),
   ambiances: () => '<p class="hint">Clique sur une icône pour écouter un extrait. Le volume se règle dans l\'onglet Réviser.</p><div class="grid">' +
     Object.entries(AMBIANCES).map(([k, a]) => card(`<button class="preview-btn" data-listen="${k}" aria-label="Écouter : ${a.name}"><span class="emoji">${a.icon}</span></button>`,
       a.name, a.desc, S.sounds.includes(k) ? '<span class="owned">✓ Possédé</span>' : buyBtn(`data-sound="${k}"`, a.price))).join('') + '</div>',
@@ -1216,8 +1258,9 @@ function equipOrBuy(listKey, curKey, id, item) { // achète si besoin, puis util
 }
 function renderShop() {
   const tc = tryOn && COSMETICS[tryOn.id], withTry = (eq, who) => tc && tryOn.who === who ? { ...eq, [tc.slot]: tryOn.id } : eq;
-  $('#decoScene').dataset.chambre = tryRoom || S.room;
-  $('#decoScene .room').innerHTML = roomHTML(tryDecor, withTry(S.equip, 'main'), withTry(S.partnerEquip, 'partner'), tryView || S.view);
+  const season = DECOR[tryDecor]?.season ?? S.season; // essayer un objet de saison affiche sa saison
+  Object.assign($('#decoScene').dataset, { chambre: tryRoom || S.room, saison: season });
+  $('#decoScene .room').innerHTML = roomHTML(tryDecor, withTry(S.equip, 'main'), withTry(S.partnerEquip, 'partner'), tryView || S.view, season);
   VILLE.sync();
   const td = tryDecor && DECOR[tryDecor];
   $('#decoNote').innerHTML = [td && `🏠 Essai : ${td.name} <button class="link" data-try-decor="${tryDecor}">Retirer l'essai</button>`,
@@ -1379,6 +1422,7 @@ document.addEventListener('click', e => {
     bubble = `${nameOf('pingouine')} est là ! Je suis trop content 💕`; toast(`${nameOf('pingouine')} a rejoint ta pièce 💕`);
     save(); renderAll();
   }
+  if (ds.seasonStep) stepSeason(+ds.seasonStep);
   if (ds.tryDecor) { tryDecor = tryDecor === ds.tryDecor ? null : ds.tryDecor; renderShop(); }
   if (ds.decor) {
     tryDecor = null;
@@ -1476,6 +1520,19 @@ $$('[data-cfg]').forEach(i => i.addEventListener('change', () => {
 }));
 
 document.addEventListener('click', e => e.target.matches('canvas.ville') && VILLE.click(e));
+function stepSeason(dir) {
+  const i = SEASON_KEYS.indexOf(S.season), n = SEASON_KEYS.length;
+  S.season = SEASON_KEYS[(i + dir + n) % n]; save(); renderAll();
+  toast(`${SEASONS[S.season].icon} ${SEASONS[S.season].name}`);
+}
+// glisser à gauche / à droite sur une scène change de saison
+let swipeX = null;
+document.addEventListener('pointerdown', e => { swipeX = e.target.closest('.scene') ? e.clientX : null; });
+document.addEventListener('pointerup', e => {
+  if (swipeX === null) return;
+  const dx = e.clientX - swipeX; swipeX = null;
+  if (Math.abs(dx) > 60) stepSeason(dx < 0 ? 1 : -1);
+});
 
 document.addEventListener('change', e => {
   const ds = e.target.dataset, sub = S.subjects.find(s => s.id == (ds.subName || ds.subColor));
@@ -1518,6 +1575,7 @@ S.pets = S.pets.filter(k => SPECIES[k]?.rarity); if (!S.pets.length) S.pets = ['
 if (!S.pets.includes(S.species)) S.species = S.pets[0];
 S.owned = S.owned.filter(id => COSMETICS[id]);
 for (const eq of [S.equip, S.partnerEquip]) for (const k in eq) if (eq[k] && !COSMETICS[eq[k]]) eq[k] = null;
+if (!(S.season in SEASONS)) S.season = '';
 S.decor.owned = S.decor.owned.filter(id => DECOR[id]); S.decor.on = S.decor.on.filter(id => DECOR[id]);
 S.eggs = S.eggs.filter(e => EGGS[e?.type]); S.sounds = S.sounds.filter(k => AMBIANCES[k]);
 S.plots = S.plots.map(p => p && PLANTS[p.type] ? p : null);
