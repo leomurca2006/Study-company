@@ -6,11 +6,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "Jardin d'Étude": a gamified study timer (pomodoro / free countdown / stopwatch) with a garden, missions, daily events, a companion pet with cosmetics, room decoration and a generated lofi ambience. Static site, vanilla HTML/CSS/JS, no build, no dependencies (only Google Fonts). All UI text is in French; keep it that way.
 
+## Design direction (applies to everything new)
+
+The reference is the latest Boutique items: the rooms (`ROOMS`), the window views (`VIEWS`) and the "Mini ville". Every new or restyled element (shop items, decor, cosmetics, screens, effects) follows their look:
+
+- **Palette** (from the portfolio's pixel city, `VILLE`):
+  - night sky violets: `#110927` `#241050` `#4B1A72` `#7A2380`;
+  - buildings: `#2D1A62` `#35206F` `#201246` `#150B31`;
+  - neon: magenta `#FF4FD8`, cyan `#4FE3FF`;
+  - amber lit windows: `#FFC46B` `#FFD99A`;
+  - light tints for daytime: `#FBE9FF` `#E7CFF5` `#D9BDEE` `#F4B5E8` `#FF8FE6` `#D9F7FF` `#BFF6FF` `#8FF0FF`.
+- **Day and night**: day uses the light tints. Night uses the violets with neon accents (glow through `box-shadow` / `drop-shadow`, e.g. the grenier baseboard, the lightning bolt's cyan halo). Never darken with a brightness filter; use the violet multiply overlay or explicit night colours.
+- **Pixel art**: the city is drawn as pixel art on a canvas with `image-rendering: pixelated`. Use the same approach for pixel art (no image files).
+- **Where it lives**: the whole site uses this palette. The CSS variables in `:root` / `body.night` hold it, so prefer `var(--…)` over new hex values. Hard-coded colours in the JS data use it too: `RARITY`, `EGGS`, `THEMES` swatches, rugs in `DECOR`, `PALETTE` (subject colours), decor flowers.
+- **Night**: a magenta glow rises from the bottom of the page, and active tabs/modes get a neon halo.
+- **Pets**: they keep their "doodle" outline style (see Pets below). `LINE` and the hard-coded outlines are the building violet `#2D1A62`, the same value as `--btn-ink`.
+- **Themes** (`body.theme-*`) are variants of the palette: amber (pêche), mint-neon (menthe), cyan (ciel). They are not new pastels.
+- **Old subject colours**: saves with the old pastel subject colours are mapped to the new `PALETTE` on load (`OLD_PAL`).
+
 ## Running / checking
 
 - Run: open `index.html` directly in a browser (works from `file://`).
 - Syntax check: `node --check app.js`
-- There is no test suite. `app.js` ends with a few `console.assert` self-checks on pure helpers (`missionsOf`, `fmt`).
+- There is no test suite. `app.js` ends with `console.assert` self-checks on pure helpers and data integrity (`missionsOf`, `fmt`, `fmtMin`, `levelOf`, collection size, unique achievement ids, egg odds summing to 1). They only show up in the browser console (see the console-errors command below). Add one when you add a pure helper or change data that has an invariant.
 - Visual check (Windows, headless Edge):
   `"/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" --headless=new --disable-gpu --window-size=1200,1000 --virtual-time-budget=3000 --screenshot=<out.png> "file:///C:/Users/leomu/Desktop/Site-Pomodoro/index.html"`
   - Console errors: replace `--screenshot=…` with `--enable-logging=stderr --v=0 --dump-dom` and grep for `CONSOLE`.
@@ -69,5 +87,8 @@ Single script, organised top to bottom:
 - Theming uses CSS variables on `:root`; the night mode is `body.night`, which overrides them. Colour themes (`body.theme-*`) only override accent variables, so they combine with night mode.
 - `[hidden]` is forced to `display: none !important`, so the `hidden` attribute works on grid/flex components.
 - Buttons use the fixed `--btn-ink` so pastel buttons stay readable in both themes.
-- The rain overlay opacity comes from `--rain`, which `setVol` sets on `body`.
+- The rain overlay opacity comes from `--rain`, which `setVol` sets on `body`. The `orage` view forces it high.
+- Rooms (`[data-chambre=…]`) and window views (`.v-*`) are the reference implementation of the design direction above.
+- At night, rooms other than `douce` and `grenier` are darkened by a violet `mix-blend-mode: multiply` overlay on `.wall`/`.floor`, not by a brightness filter (a brightness filter turns them grey).
+- Overlays above the window (`.rain`, `.frame`, `.flash`) have `pointer-events: none` so clicks reach the city canvas.
 - Pet positions in the room use `--px`, which changes when `.scene.has-partner` is set.

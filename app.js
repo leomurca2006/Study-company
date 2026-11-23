@@ -82,7 +82,7 @@ const store = {
 const DEFAULT = {
   version: 1, // à incrémenter avec une migration quand la forme des données change
   coins: 15, inv: { marguerite: 1 }, plots: Array(9).fill(null),
-  subjects: [{ id: 1, name: 'Maths', color: '#f29bb5', min: 0 }],
+  subjects: [{ id: 1, name: 'Maths', color: '#FF8FE6', min: 0 }],
   carry: 0, totalMin: 0, cfg: { preset: 'classique', work: 25, short: 5, long: 15, libre: 45 }, day: null,
   friend: {}, lastStudy: today(), decayed: 0, streak: { cur: 0, best: 0, last: null }, sessions: [], alertVol: 0.5,
   owned: [], equip: { tete: null, yeux: null, cou: null }, partnerEquip: { tete: null, yeux: null, cou: null },
@@ -116,7 +116,7 @@ const star = (x, y, r) => 'M' + Array.from({ length: 10 }, (_, i) => {
   const a = Math.PI * i / 5 - Math.PI / 2, d = i % 2 ? r / 2.4 : r;
   return `${(x + d * Math.cos(a)).toFixed(1)} ${(y + d * Math.sin(a)).toFixed(1)}`;
 }).join('L') + 'Z';
-const flowers = pts => pts.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="7" fill="${['#f9cdd9', '#fdeaa9', '#e0d6f7', '#c4ead8'][i % 4]}"/><circle cx="${x}" cy="${y}" r="2.5" fill="#fff" stroke="none"/>`).join('');
+const flowers = pts => pts.map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="7" fill="${['#FF8FE6', '#FFD99A', '#E7CFF5', '#BFF6FF'][i % 4]}"/><circle cx="${x}" cy="${y}" r="2.5" fill="#fff" stroke="none"/>`).join('');
 const SLOTS = { tete: '🎩 Chapeaux', yeux: '👓 Lunettes', cou: '🎀 Accessoires' };
 const COSMETICS = {
   bonnet: { slot: 'tete', name: 'Bonnet rose', price: 60, svg: `<path d="M56 80Q100 18 144 80Z" fill="#f9cdd9"/><rect x="52" y="72" width="96" height="14" rx="7" fill="#f2a3bb"/><circle cx="100" cy="44" r="10" fill="#fff"/>` },
@@ -140,8 +140,8 @@ const COSMETICS = {
 
 // ---------- Animaux (style doodle : contour dessiné) ----------
 // Tous partagent la même silhouette, donc les cosmétiques vont à tout le monde.
-const LINE = '#4a4266';
-const beak = '<path d="M93 114Q100 109 107 114Q100 124 93 114Z" fill="#f9c9a0" stroke="#4a4266" stroke-width="3" stroke-linejoin="round"/>';
+const LINE = '#2D1A62';
+const beak = '<path d="M93 114Q100 109 107 114Q100 124 93 114Z" fill="#f9c9a0" stroke="#2D1A62" stroke-width="3" stroke-linejoin="round"/>';
 const pengBelly = '<path d="M100 90C126 90 142 118 142 148C142 180 124 198 100 198C76 198 58 180 58 148C58 118 74 90 100 90Z" fill="#fffdf8"/>';
 const tummy = fill => `<ellipse cx="100" cy="166" rx="36" ry="36" fill="${fill}"/>`;
 const SPECIES = {
@@ -152,77 +152,77 @@ const SPECIES = {
     back: '<path d="M140 190Q190 194 184 146Q182 130 170 134Q174 172 138 176Z" fill="#f8d6ad"/>',
     ears: '<path d="M52 96L56 40L96 64ZM148 96L144 40L104 64Z" fill="#f8d6ad"/><path d="M62 84L63 56L84 68ZM138 84L137 56L116 68Z" fill="#f9cdd9"/>',
     belly: tummy('#fff6ea'),
-    face: '<path d="M88 64Q100 70 112 64M91 74Q100 78 109 74" stroke="#e2a874" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="100" cy="118" rx="16" ry="10" fill="#fff6ea"/><path d="M96 112H104L100 117Z" fill="#f2a3bb" stroke="#4a4266" stroke-width="2" stroke-linejoin="round"/><path d="M100 117Q96 123 91 120M100 117Q104 123 109 120M56 110L74 113M56 120L74 117M144 110L126 113M144 120L126 117" stroke="#4a4266" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: '<path d="M88 64Q100 70 112 64M91 74Q100 78 109 74" stroke="#e2a874" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="100" cy="118" rx="16" ry="10" fill="#fff6ea"/><path d="M96 112H104L100 117Z" fill="#f2a3bb" stroke="#2D1A62" stroke-width="2" stroke-linejoin="round"/><path d="M100 117Q96 123 91 120M100 117Q104 123 109 120M56 110L74 113M56 120L74 117M144 110L126 113M144 120L126 117" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   lapin: { name: 'Lapin', dflt: 'Praline', price: 150, rarity: 'commun',
     story: ['Praline a grandi dans un potager rempli de carottes et de dictionnaires.', "Elle collectionne les mots compliqués comme d'autres collectionnent les trèfles.", 'Son mot préféré du moment : « persévérance ». Elle trouve qu\'il te va bien.'], body: '#e4d6ee', feet: '#e4d6ee',
     back: '<circle cx="160" cy="186" r="13" fill="#fff"/>',
     ears: '<ellipse cx="78" cy="42" rx="14" ry="38" transform="rotate(-12 78 42)" fill="#e4d6ee"/><ellipse cx="122" cy="42" rx="14" ry="38" transform="rotate(12 122 42)" fill="#e4d6ee"/><ellipse cx="78" cy="44" rx="6" ry="26" transform="rotate(-12 78 44)" fill="#f9cdd9" stroke-width="2"/><ellipse cx="122" cy="44" rx="6" ry="26" transform="rotate(12 122 44)" fill="#f9cdd9" stroke-width="2"/>',
     belly: tummy('#fdf8fc'),
-    face: '<ellipse cx="100" cy="114" rx="5" ry="3.5" fill="#f2a3bb" stroke="#4a4266" stroke-width="2"/><path d="M100 117Q96 123 91 120M100 117Q104 123 109 120" stroke="#4a4266" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: '<ellipse cx="100" cy="114" rx="5" ry="3.5" fill="#f2a3bb" stroke="#2D1A62" stroke-width="2"/><path d="M100 117Q96 123 91 120M100 117Q104 123 109 120" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   renard: { name: 'Renard', dflt: 'Caramel', price: 200, rarity: 'commun',
     story: ['Caramel connaît tous les raccourcis de la forêt, mais aucun pour les devoirs.', 'Petit, il voulait tout réussir sans effort… et ça n\'a jamais marché.', "Aujourd'hui, il préfère réviser avec toi, un petit pas à la fois."], body: '#f7c19c', feet: '#8a6a7e',
     back: '<path d="M140 198Q198 198 188 138Q178 108 160 138Q160 178 140 188Z" fill="#f7c19c"/><path d="M188 138Q178 108 165 128Q174 138 188 138Z" fill="#fff6ec" stroke-width="2.5"/>',
     ears: '<path d="M52 96L52 34L96 64ZM148 96L148 34L104 64Z" fill="#f7c19c"/><path d="M52 54L52 34L69 46ZM148 54L148 34L131 46Z" fill="#8a6a7e" stroke-width="2.5"/>',
     belly: tummy('#fff6ec'),
-    face: '<path d="M62 110Q100 152 138 110Q100 128 62 110Z" fill="#fff6ec" stroke="#4a4266" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="100" cy="115" rx="5" ry="3.5" fill="#4a4266"/>' },
+    face: '<path d="M62 110Q100 152 138 110Q100 128 62 110Z" fill="#fff6ec" stroke="#2D1A62" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="100" cy="115" rx="5" ry="3.5" fill="#2D1A62"/>' },
   hamster: { name: 'Hamster', dflt: 'Noisette', rarity: 'rare', body: '#f3c58f', feet: '#f9c9a0',
     story: ['Noisette range ses graines par ordre alphabétique dans ses joues.', "Elle a déjà couru l'équivalent de trois tours du monde dans sa roue.", 'Son secret, dit-elle : un petit tour de roue chaque jour.'],
     ears: '<circle cx="62" cy="70" r="16" fill="#f3c58f"/><circle cx="138" cy="70" r="16" fill="#f3c58f"/><circle cx="62" cy="70" r="8" fill="#f9cdd9" stroke-width="2"/><circle cx="138" cy="70" r="8" fill="#f9cdd9" stroke-width="2"/>',
     belly: tummy('#fff4e4'),
-    face: '<ellipse cx="68" cy="124" rx="13" ry="10" fill="#fff4e4"/><ellipse cx="132" cy="124" rx="13" ry="10" fill="#fff4e4"/><ellipse cx="100" cy="114" rx="5" ry="3.5" fill="#f2a3bb" stroke="#4a4266" stroke-width="2"/><path d="M100 117Q96 123 91 120M100 117Q104 123 109 120" stroke="#4a4266" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: '<ellipse cx="68" cy="124" rx="13" ry="10" fill="#fff4e4"/><ellipse cx="132" cy="124" rx="13" ry="10" fill="#fff4e4"/><ellipse cx="100" cy="114" rx="5" ry="3.5" fill="#f2a3bb" stroke="#2D1A62" stroke-width="2"/><path d="M100 117Q96 123 91 120M100 117Q104 123 109 120" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   ours: { name: 'Ourson', dflt: 'Cannelle', rarity: 'rare', body: '#c9a07a', feet: '#b88a64',
     story: ['Cannelle hiberne tout l\'hiver, mais garde toujours un livre près de son oreiller.', 'Il prépare le meilleur chocolat chaud de la forêt, idéal pour les soirs de révision.', "Pour lui, une bonne pause vaut autant qu'une heure de travail."],
     ears: '<circle cx="64" cy="66" r="17" fill="#c9a07a"/><circle cx="136" cy="66" r="17" fill="#c9a07a"/><circle cx="64" cy="66" r="8" fill="#ecd3b8" stroke-width="2"/><circle cx="136" cy="66" r="8" fill="#ecd3b8" stroke-width="2"/>',
     belly: tummy('#ecd3b8'),
-    face: '<ellipse cx="100" cy="121" rx="17" ry="12" fill="#ecd3b8" stroke="#4a4266" stroke-width="2.5"/><ellipse cx="100" cy="115" rx="6" ry="4" fill="#4a4266"/><path d="M100 119V124M94 126Q100 130 106 126" stroke="#4a4266" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: '<ellipse cx="100" cy="121" rx="17" ry="12" fill="#ecd3b8" stroke="#2D1A62" stroke-width="2.5"/><ellipse cx="100" cy="115" rx="6" ry="4" fill="#2D1A62"/><path d="M100 119V124M94 126Q100 130 106 126" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   rainette: { name: 'Rainette', dflt: 'Pistache', rarity: 'rare', body: '#a8d89a', feet: '#a8d89a',
     story: ['Pistache vit sur un nénuphar et compte les gouttes de pluie pour s\'entraîner au calcul.', 'Elle chante une petite chanson chaque fois qu\'elle apprend quelque chose.', "Son rêve : sauter d'un nénuphar à l'autre jusqu'à la lune."],
     ears: '<circle cx="72" cy="64" r="18" fill="#a8d89a"/><circle cx="128" cy="64" r="18" fill="#a8d89a"/>',
     belly: tummy('#eaf6d8') + '<circle cx="62" cy="88" r="4" fill="#8cc27c" stroke="none"/><circle cx="140" cy="94" r="5" fill="#8cc27c" stroke="none"/>',
-    face: '<path d="M80 118Q100 134 120 118" stroke="#4a4266" stroke-width="3" fill="none" stroke-linecap="round"/>' },
-  panda: { name: 'Panda', dflt: 'Bambou', rarity: 'rare', body: '#fbfaf7', feet: '#4a4266',
+    face: '<path d="M80 118Q100 134 120 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
+  panda: { name: 'Panda', dflt: 'Bambou', rarity: 'rare', body: '#fbfaf7', feet: '#2D1A62',
     story: ['Bambou mâche lentement : il dit que ça l\'aide à réfléchir.', "Il a appris la calligraphie avec une tige de bambou trempée dans l'encre.", 'Il trouve que tu avances à ton rythme, et que c\'est le meilleur.'],
-    ears: '<circle cx="62" cy="68" r="16" fill="#4a4266"/><circle cx="138" cy="68" r="16" fill="#4a4266"/>',
-    belly: '<ellipse cx="84" cy="105" rx="11" ry="13" transform="rotate(20 84 105)" fill="#4a4266" stroke="none"/><ellipse cx="116" cy="105" rx="11" ry="13" transform="rotate(-20 116 105)" fill="#4a4266" stroke="none"/>',
-    face: '<circle cx="85.5" cy="102.5" r="1.8" fill="#fff"/><circle cx="117.5" cy="102.5" r="1.8" fill="#fff"/><ellipse cx="100" cy="117" rx="5" ry="3.5" fill="#4a4266"/><path d="M100 120Q96 126 91 123M100 120Q104 126 109 123" stroke="#4a4266" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    ears: '<circle cx="62" cy="68" r="16" fill="#2D1A62"/><circle cx="138" cy="68" r="16" fill="#2D1A62"/>',
+    belly: '<ellipse cx="84" cy="105" rx="11" ry="13" transform="rotate(20 84 105)" fill="#2D1A62" stroke="none"/><ellipse cx="116" cy="105" rx="11" ry="13" transform="rotate(-20 116 105)" fill="#2D1A62" stroke="none"/>',
+    face: '<circle cx="85.5" cy="102.5" r="1.8" fill="#fff"/><circle cx="117.5" cy="102.5" r="1.8" fill="#fff"/><ellipse cx="100" cy="117" rx="5" ry="3.5" fill="#2D1A62"/><path d="M100 120Q96 126 91 123M100 120Q104 126 109 123" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   axolotl: { name: 'Axolotl', dflt: 'Corail', rarity: 'epique', body: '#f7bfd6', feet: '#f7bfd6',
     story: ["Corail vient d'un lac caché où l'eau brille comme du verre.", 'Elle peut faire repousser ses nageoires, mais elle préfère faire pousser des idées.', 'Elle sourit tout le temps, même quand les exercices sont difficiles.'],
     back: '<path d="M140 192Q186 202 192 168Q172 178 150 174Z" fill="#f7bfd6"/>',
     ears: '<g fill="#f08fb4"><ellipse cx="44" cy="84" rx="16" ry="6" transform="rotate(-30 44 84)"/><ellipse cx="40" cy="102" rx="16" ry="6"/><ellipse cx="44" cy="120" rx="16" ry="6" transform="rotate(30 44 120)"/><ellipse cx="156" cy="84" rx="16" ry="6" transform="rotate(30 156 84)"/><ellipse cx="160" cy="102" rx="16" ry="6"/><ellipse cx="156" cy="120" rx="16" ry="6" transform="rotate(-30 156 120)"/></g>',
     belly: tummy('#fde3ee'),
-    face: '<path d="M88 118Q100 127 112 118" stroke="#4a4266" stroke-width="3" fill="none" stroke-linecap="round"/>' },
+    face: '<path d="M88 118Q100 127 112 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
   koala: { name: 'Koala', dflt: 'Eucalyptus', rarity: 'epique', body: '#b9bfcc', feet: '#a3a9b8',
     story: ['Eucalyptus dort vingt heures par jour, mais les quatre autres sont très productives.', "Il a lu tous les livres de la bibliothèque de son arbre, deux fois.", 'Il dit que se reposer fait partie du travail, et il a bien raison.'],
     ears: '<circle cx="54" cy="76" r="24" fill="#b9bfcc"/><circle cx="146" cy="76" r="24" fill="#b9bfcc"/><circle cx="54" cy="78" r="13" fill="#f3e6ef" stroke-width="2"/><circle cx="146" cy="78" r="13" fill="#f3e6ef" stroke-width="2"/>',
     belly: tummy('#eceef3'),
-    face: '<ellipse cx="100" cy="118" rx="9" ry="12" fill="#5b5372" stroke="#4a4266" stroke-width="2"/><path d="M92 135Q100 139 108 135" stroke="#4a4266" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: '<ellipse cx="100" cy="118" rx="9" ry="12" fill="#5b5372" stroke="#2D1A62" stroke-width="2"/><path d="M92 135Q100 139 108 135" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   hibou: { name: 'Hibou', dflt: 'Sage', rarity: 'epique', egg: false, body: '#b99a7e', feet: '#f3c95e',
     story: ["Sage n'apparaît qu'aux élèves qui reviennent jour après jour.", 'Il a veillé sur des générations d\'élèves pendant leurs soirées de révision.', 'Son conseil le plus précieux : « Dors bien la veille de l\'examen. »'],
     ears: '<path d="M58 90L54 44L86 66ZM142 90L146 44L114 66Z" fill="#b99a7e"/>',
     belly: tummy('#f3e4cf') + '<circle cx="84" cy="104" r="15" fill="#fffaf0" stroke-width="2.5"/><circle cx="116" cy="104" r="15" fill="#fffaf0" stroke-width="2.5"/><path d="M86 158l6 6 6-6M102 158l6 6 6-6M94 174l6 6 6-6" fill="none" stroke="#c9ab8c" stroke-width="2.5"/>',
-    face: '<path d="M94 116L106 116L100 128Z" fill="#f3c95e" stroke="#4a4266" stroke-width="2.5" stroke-linejoin="round"/>' },
+    face: '<path d="M94 116L106 116L100 128Z" fill="#f3c95e" stroke="#2D1A62" stroke-width="2.5" stroke-linejoin="round"/>' },
   dragonnet: { name: 'Dragonnet', dflt: 'Braise', rarity: 'legendaire', body: '#a8dcc0', feet: '#8cc9a8',
     story: ["Braise est née d'un œuf tombé d'une étoile filante.", 'Ses flammes sont tièdes et sentent la cannelle, parfaites pour réchauffer le thé.', 'On raconte qu\'elle ne choisit que les élèves au cœur patient.'],
     back: '<path d="M52 110Q8 80 14 130Q30 120 44 138Z" fill="#d9ccf5"/><path d="M148 110Q192 80 186 130Q170 120 156 138Z" fill="#d9ccf5"/><path d="M140 196Q192 204 192 168L180 176L176 164L166 178Q160 190 140 186Z" fill="#a8dcc0"/>',
     ears: '<path d="M76 66L70 34L90 60ZM124 66L130 34L110 60Z" fill="#fdeaa9"/>',
     belly: tummy('#fdeaa9') + '<path d="M72 150H128M66 166H134M72 182H128" stroke="#f3d47e" stroke-width="2.5"/>',
-    face: '<circle cx="94" cy="116" r="2" fill="#4a4266"/><circle cx="106" cy="116" r="2" fill="#4a4266"/><path d="M90 124Q100 132 110 124" stroke="#4a4266" stroke-width="2.5" fill="none" stroke-linecap="round"/>' },
+    face: '<circle cx="94" cy="116" r="2" fill="#2D1A62"/><circle cx="106" cy="116" r="2" fill="#2D1A62"/><path d="M90 124Q100 132 110 124" stroke="#2D1A62" stroke-width="2.5" fill="none" stroke-linecap="round"/>' },
   // la petite amie du pingouin (pas adoptable, se débloque à part)
   pingouine: { name: 'Pingouine', dflt: 'Perle', body: '#cbbde6', feet: '#f9c9a0', belly: pengBelly,
     face: beak + '<path d="M78 100L74 96M81 98L79 93M122 100L126 96M119 98L121 93" stroke="#3b3550" stroke-width="2.2" stroke-linecap="round"/>',
-    hair: '<g transform="translate(128 68)" fill="#f9cdd9" stroke="#4a4266" stroke-width="2.5"><circle cx="-7" r="7"/><circle cx="7" r="7"/><circle cy="-7" r="7"/><circle cy="7" r="7"/><circle r="5" fill="#fde49a"/></g>' },
+    hair: '<g transform="translate(128 68)" fill="#f9cdd9" stroke="#2D1A62" stroke-width="2.5"><circle cx="-7" r="7"/><circle cx="7" r="7"/><circle cy="-7" r="7"/><circle cy="7" r="7"/><circle r="5" fill="#fde49a"/></g>' },
 };
 const PARTNER_PRICE = 250;
 const COLL = Object.keys(SPECIES).filter(k => SPECIES[k].rarity); // la collection (sans Perle)
 const RARITY = {
-  commun: { name: 'Commun', color: '#93d0b4' }, rare: { name: 'Rare', color: '#8fb3ee' },
-  epique: { name: 'Épique', color: '#bba9ea' }, legendaire: { name: 'Légendaire', color: '#f3c95e' },
+  commun: { name: 'Commun', color: '#BFF6FF' }, rare: { name: 'Rare', color: '#4FE3FF' },
+  epique: { name: 'Épique', color: '#FF4FD8' }, legendaire: { name: 'Légendaire', color: '#FFC46B' },
 };
 // Un œuf éclot après min minutes de révision ; odds = probabilité de chaque rareté
 const EGGS = {
-  commun: { name: 'Œuf commun', price: 150, min: 120, color: '#c4ead8', odds: { commun: 0.7, rare: 0.25, epique: 0.05 } },
-  rare: { name: 'Œuf rare', price: 350, min: 300, color: '#cfe0fa', odds: { rare: 0.7, epique: 0.25, legendaire: 0.05 } },
-  epique: { name: 'Œuf épique', price: 600, min: 480, color: '#e0d6f7', odds: { epique: 0.8, legendaire: 0.2 } },
+  commun: { name: 'Œuf commun', price: 150, min: 120, color: '#D9F7FF', odds: { commun: 0.7, rare: 0.25, epique: 0.05 } },
+  rare: { name: 'Œuf rare', price: 350, min: 300, color: '#BFF6FF', odds: { rare: 0.7, epique: 0.25, legendaire: 0.05 } },
+  epique: { name: 'Œuf épique', price: 600, min: 480, color: '#FFB8EE', odds: { epique: 0.8, legendaire: 0.2 } },
 };
 // Chaque niveau d'amitié ajoute une réplique, et un souvenir (histoire), un accessoire ou une animation
 const LEVEL_UNLOCKS = {
@@ -324,10 +324,10 @@ const talk = () => say('idle');
 const DECOR = {
   etagere:     { name: 'Étagère', icon: '📚', price: 0, html: '<div class="d shelf"><span>📚</span><span>🕯️</span><span>🌵</span></div>' },
   plante:      { name: 'Grande plante', icon: '🪴', price: 0, html: '<span class="d" style="right:6%;bottom:40px;font-size:2.8rem">🪴</span>' },
-  tapisLav:    { name: 'Tapis lavande', price: 0, rug: '#e0d6f7' },
-  tapisRose:   { name: 'Tapis rose', price: 100, rug: '#f9cdd9' },
-  tapisMenthe: { name: 'Tapis menthe', price: 100, rug: '#c4ead8' },
-  tapisSoleil: { name: 'Tapis soleil', price: 100, rug: '#fdeaa9' },
+  tapisLav:    { name: 'Tapis lavande', price: 0, rug: '#E7CFF5' },
+  tapisRose:   { name: 'Tapis rose', price: 100, rug: '#FFB8EE' },
+  tapisMenthe: { name: 'Tapis menthe', price: 100, rug: '#B8F5E0' },
+  tapisSoleil: { name: 'Tapis soleil', price: 100, rug: '#FFD99A' },
   suspendue:   { name: 'Plante suspendue', icon: '🌿', price: 120, html: '<span class="d hang">🌿</span>' },
   cadre:       { name: 'Cadre', icon: '🖼️', price: 140, html: '<span class="d" style="right:6%;top:120px;font-size:2.2rem">🖼️</span>' },
   nounours:    { name: 'Nounours', icon: '🧸', price: 150, html: '<span class="d" style="left:7%;bottom:22px;font-size:2.4rem">🧸</span>' },
@@ -349,8 +349,8 @@ const AMBIANCES = {
   foret: { name: 'Forêt', icon: '🌲', price: 200, desc: "Feuillage et chants d'oiseaux" },
 };
 const THEMES = {
-  lavande: { name: 'Lavande', price: 0, color: '#bba9ea' }, peche: { name: 'Pêche', price: 200, color: '#f5a888' },
-  menthe: { name: 'Menthe', price: 250, color: '#8ccfae' }, ciel: { name: 'Ciel', price: 300, color: '#8fb6ec' },
+  lavande: { name: 'Lavande', price: 0, color: '#C9A6E4' }, peche: { name: 'Pêche', price: 200, color: '#FFC46B' },
+  menthe: { name: 'Menthe', price: 250, color: '#4FE3B0' }, ciel: { name: 'Ciel', price: 300, color: '#4FE3FF' },
 };
 
 // ---------- Succès (val = progression actuelle, goal = objectif) ----------
@@ -424,7 +424,7 @@ const VIEWS = {
   etoiles: { name: 'Nuit étoilée', icon: '🌌', price: 250, desc: 'Étoiles qui scintillent et étoiles filantes',
     html: () => '<div class="sky v-etoiles"><span class="stars"></span><span class="stars s2"></span><span class="moon"></span><i class="shoot"></i><i class="shoot s2"></i></div>' },
   orage: { name: 'Orage', icon: '⛈️', price: 300, desc: 'Pluie battante et éclairs',
-    html: () => '<div class="sky v-orage"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span><svg class="bolt" viewBox="0 0 20 40" aria-hidden="true"><path d="M12 0L2 22h7L5 40l13-25h-7z" fill="#fff6b0"/></svg><span class="flash"></span></div>' },
+    html: () => '<div class="sky v-orage"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span><svg class="bolt" viewBox="0 0 20 40" aria-hidden="true"><path d="M12 0L2 22h7L5 40l13-25h-7z" fill="#FFD99A"/></svg><span class="flash"></span></div>' },
   ville: { name: 'Mini ville', icon: '🌃', price: 450, desc: 'Une ville en pixels qui vit la nuit. Clique sur un immeuble !',
     html: () => `<canvas class="ville" width="${VILLE.W}" height="${VILLE.H}" aria-hidden="true"></canvas>` },
 };
@@ -1019,7 +1019,7 @@ async function importSave(file) {
 
 // ---------- Premier lancement ----------
 const tuto = { step: 0, pick: 'pingouin', name: null };
-const PALETTE = ['#f29bb5', '#93d0b4', '#bba9ea', '#f6c177', '#8fb6ec', '#f5a888'];
+const PALETTE = ['#FF8FE6', '#4FE3FF', '#C9A6E4', '#FFC46B', '#8FF0FF', '#FF4FD8'];
 function renderTuto() {
   $('#tutoBody').innerHTML = `<p class="hint">Étape ${tuto.step + 1} / 3</p>` + [
     `<h2 id="tutoTitle">🌷 Bienvenue au Jardin d'Étude</h2>
@@ -1512,6 +1512,9 @@ S.decor.owned = S.decor.owned.filter(id => DECOR[id]); S.decor.on = S.decor.on.f
 S.eggs = S.eggs.filter(e => EGGS[e?.type]); S.sounds = S.sounds.filter(k => AMBIANCES[k]);
 S.plots = S.plots.map(p => p && PLANTS[p.type] ? p : null);
 if (!THEMES[S.theme]) S.theme = 'lavande';
+// anciennes couleurs pastel des matières -> palette de la ville
+const OLD_PAL = ['#f29bb5', '#93d0b4', '#bba9ea', '#f6c177', '#8fb6ec', '#f5a888'];
+S.subjects.forEach(x => { const i = OLD_PAL.indexOf(String(x.color).toLowerCase()); if (i >= 0) x.color = PALETTE[i]; });
 S.rooms = S.rooms.filter(k => ROOMS[k]); if (!ROOMS[S.room]) S.room = 'douce';
 S.views = S.views.filter(k => VIEWS[k]); if (!VIEWS[S.view]) S.view = 'ciel';
 
