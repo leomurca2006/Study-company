@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jardin d'Étude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="petals" aria-hidden="true"></div>
+
+<header>
+  <h1>🌷 Jardin d'Étude</h1>
+  <div class="head-right">
+    <button id="nightBtn" class="pill" aria-label="Changer jour / nuit">🌙</button>
+    <div class="pill coins" title="Pièces">🪙 <b id="coins">0</b></div>
+  </div>
+</header>
+
+<div id="eventBanner" class="event"></div>
+
+<nav class="tabs">
+  <button data-tab="study" class="active">⏱️ Réviser</button>
+  <button data-tab="penguin">🐧 Compagnons</button>
+  <button data-tab="deco">🏠 Déco</button>
+  <button data-tab="garden">🌷 Jardin</button>
+  <button data-tab="missions">📜 Missions</button>
+  <button data-tab="subjects">📚 Matières</button>
+</nav>
+
+<main>
+  <!-- RÉVISER -->
+  <section id="study" class="panel active">
+    <div class="card scene-card">
+      <div class="modes">
+        <button data-mode="pomodoro" class="active">🍅 Pomodoro</button>
+        <button data-mode="libre">🌙 Temps libre</button>
+        <button data-mode="chrono">⏱️ Chrono</button>
+      </div>
+
+      <div class="scene" id="scene">
+        <div class="room"></div>
+        <div class="timer"><div id="phase"></div><div id="time"></div><div class="tbar"><i id="tbar"></i></div></div>
+        <div class="mood-badge" id="moodBadge" title="Humeur de ton compagnon"></div>
+        <div class="bubble" id="bubble"></div>
+      </div>
+
+      <label class="field">Matière <select id="subjectSelect"></select></label>
+      <div class="controls">
+        <button id="startBtn" class="btn primary">Démarrer</button>
+        <button id="stopBtn" class="btn">Terminer</button>
+      </div>
+      <div class="settings">
+        <label data-for="pomodoro">Travail <input type="number" min="1" max="180" data-cfg="work"> min</label>
+        <label data-for="pomodoro">Pause <input type="number" min="1" max="60" data-cfg="short"> min</label>
+        <label data-for="pomodoro">Grande pause <input type="number" min="1" max="60" data-cfg="long"> min</label>
+        <label data-for="libre">Durée <input type="number" min="1" max="600" data-cfg="libre"> min</label>
+        <p data-for="chrono">Le chrono tourne jusqu'à ce que tu cliques sur « Terminer ».</p>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h2>🎧 Ambiance lofi</h2>
+        <div class="mixer">
+          <label>🎵 Musique lofi <input type="range" min="0" max="1" step="0.01" data-vol="lofi"></label>
+          <label>🌧️ Pluie <input type="range" min="0" max="1" step="0.01" data-vol="rain"></label>
+          <label>🍃 Vent <input type="range" min="0" max="1" step="0.01" data-vol="wind"></label>
+          <label>🚗 Voitures <input type="range" min="0" max="1" step="0.01" data-vol="cars"></label>
+        </div>
+        <button id="nightBtn2" class="btn wide">🌙 Passer en mode nuit</button>
+      </div>
+      <div class="card">
+        <h2>Aujourd'hui</h2>
+        <div class="stats" id="stats"></div>
+        <p class="hint">🌱 Chaque minute de révision rapporte 1 🪙 et fait pousser ton jardin.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPAGNONS -->
+  <section id="penguin" class="panel">
+    <div class="card pet-card">
+      <div class="pet-stage scene" id="bigStage"></div>
+      <p class="preview-note" id="previewNote"></p>
+      <label class="field">Nom <input id="petName" maxlength="20"></label>
+      <h2>Humeur</h2>
+      <div class="mood"><i id="moodBar"></i></div>
+      <p id="moodText" class="mood-text"></p>
+      <p class="hint" id="moodHint"></p>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h2>💕 La petite amie du pingouin</h2>
+        <div id="partnerCard"></div>
+      </div>
+      <div class="card">
+        <h2>🐾 Adopter un compagnon</h2>
+        <div class="grid" id="adopt"></div>
+      </div>
+      <div class="card">
+        <h2>👗 Garde-robe</h2>
+        <p class="hint">Clique sur un dessin pour l'essayer avant de l'acheter.</p>
+        <div id="wardrobe"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DÉCO -->
+  <section id="deco" class="panel">
+    <div class="card">
+      <h2>🏠 Ma pièce</h2>
+      <p class="hint">Clique sur un objet de la boutique pour l'essayer dans ta pièce avant de l'acheter.</p>
+      <div class="scene" id="decoScene"><div class="room"></div></div>
+      <p class="preview-note" id="decoNote"></p>
+    </div>
+    <div class="card">
+      <h2>Boutique déco</h2>
+      <div class="grid" id="decoShop"></div>
+    </div>
+  </section>
+
+  <!-- JARDIN -->
+  <section id="garden" class="panel">
+    <div class="card">
+      <h2>Mon jardin</h2>
+      <p class="hint" id="gardenHint"></p>
+      <div class="plots" id="plots"></div>
+    </div>
+    <div class="card">
+      <h2>Mon sac de graines</h2>
+      <div class="inv" id="inv"></div>
+    </div>
+    <div class="card">
+      <h2>Boutique de graines</h2>
+      <div class="shop" id="shop"></div>
+    </div>
+  </section>
+
+  <!-- MISSIONS -->
+  <section id="missions" class="panel">
+    <div class="card">
+      <h2>Événement du jour</h2>
+      <div id="eventCard"></div>
+    </div>
+    <div class="card">
+      <h2>Missions du jour</h2>
+      <div id="missionList"></div>
+    </div>
+  </section>
+
+  <!-- MATIÈRES -->
+  <section id="subjects" class="panel">
+    <div class="card">
+      <h2>Ajouter une matière</h2>
+      <form id="subjectForm" class="row">
+        <input id="subjectName" placeholder="ex : Histoire" maxlength="30" required>
+        <input id="subjectColor" type="color" value="#f8c8d6" aria-label="Couleur">
+        <button class="btn primary">Ajouter</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Mes matières</h2>
+      <div id="subjectList"></div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
