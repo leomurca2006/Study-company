@@ -14,6 +14,7 @@
 <header>
   <h1>🌷 Jardin d'Étude</h1>
   <div class="head-right">
+    <button class="pill" data-tab="settings" aria-label="Réglages">⚙️</button>
     <button id="nightBtn" class="pill" aria-label="Changer jour / nuit">🌙</button>
     <div class="pill coins" title="Pièces">🪙 <b id="coins">0</b></div>
   </div>
@@ -23,11 +24,14 @@
 
 <nav class="tabs">
   <button data-tab="study" class="active">⏱️ Réviser</button>
-  <button data-tab="penguin">🐧 Compagnons</button>
-  <button data-tab="deco">🏠 Déco</button>
+  <button data-tab="outils">🧰 Outils</button>
+  <button data-tab="penguin">🐾 Collection</button>
+  <button data-tab="deco">🛍️ Boutique</button>
   <button data-tab="garden">🌷 Jardin</button>
   <button data-tab="missions">📜 Missions</button>
+  <button data-tab="succes">🏆 Succès</button>
   <button data-tab="subjects">📚 Matières</button>
+  <button data-tab="statsTab">📊 Stats</button>
 </nav>
 
 <main>
@@ -42,20 +46,30 @@
 
       <div class="scene" id="scene">
         <div class="room"></div>
-        <div class="timer"><div id="phase"></div><div id="time"></div><div class="tbar"><i id="tbar"></i></div></div>
-        <div class="mood-badge" id="moodBadge" title="Humeur de ton compagnon"></div>
+        <div class="timer" role="timer" aria-live="off"><div id="phase"></div><div id="time"></div><div class="tbar" role="progressbar" aria-label="Progression de la phase" aria-valuemin="0" aria-valuemax="100"><i id="tbar"></i></div></div>
+        <div class="badge" id="streakBadge" title="Série : jours d'affilée avec au moins 15 min de révision"></div>
         <div class="bubble" id="bubble"></div>
       </div>
 
+      <div class="friend"><div class="friend-head"><b></b><span></span></div><div class="progress" role="progressbar" aria-label="Amitié" aria-valuemin="0" aria-valuemax="100"><i></i></div><small></small></div>
+
       <label class="field">Matière <select id="subjectSelect"></select></label>
+      <label class="field">Objectif <input id="goalInput" maxlength="80" placeholder="facultatif, ex : finir le chapitre 3"></label>
       <div class="controls">
         <button id="startBtn" class="btn primary">Démarrer</button>
-        <button id="stopBtn" class="btn">Terminer</button>
+        <button id="stopBtn" class="btn">Abandonner</button>
+        <button id="focusBtn" class="btn">🎯 Concentration</button>
       </div>
       <div class="settings">
-        <label data-for="pomodoro">Travail <input type="number" min="1" max="180" data-cfg="work"> min</label>
-        <label data-for="pomodoro">Pause <input type="number" min="1" max="60" data-cfg="short"> min</label>
-        <label data-for="pomodoro">Grande pause <input type="number" min="1" max="60" data-cfg="long"> min</label>
+        <label data-for="pomodoro">Rythme <select id="presetSelect">
+          <option value="classique">Classique 25 / 5</option>
+          <option value="long">Long 50 / 10</option>
+          <option value="intense">Intense 90 / 20</option>
+          <option value="perso">Personnalisé</option>
+        </select></label>
+        <label data-for="perso">Travail <input type="number" min="1" max="180" data-cfg="work"> min</label>
+        <label data-for="perso">Pause <input type="number" min="1" max="30" data-cfg="short"> min</label>
+        <label data-for="perso">Grande pause <input type="number" min="5" max="60" data-cfg="long"> min</label>
         <label data-for="libre">Durée <input type="number" min="1" max="600" data-cfg="libre"> min</label>
         <p data-for="chrono">Le chrono tourne jusqu'à ce que tu cliques sur « Terminer ».</p>
       </div>
@@ -69,56 +83,56 @@
           <label>🌧️ Pluie <input type="range" min="0" max="1" step="0.01" data-vol="rain"></label>
           <label>🍃 Vent <input type="range" min="0" max="1" step="0.01" data-vol="wind"></label>
           <label>🚗 Voitures <input type="range" min="0" max="1" step="0.01" data-vol="cars"></label>
+          <label>☕ Café <input type="range" min="0" max="1" step="0.01" data-vol="cafe"></label>
+          <label>🌲 Forêt <input type="range" min="0" max="1" step="0.01" data-vol="foret"></label>
+          <label>🔔 Alerte de fin <input type="range" min="0" max="1" step="0.01" id="alertVol"></label>
         </div>
         <button id="nightBtn2" class="btn wide">🌙 Passer en mode nuit</button>
       </div>
       <div class="card">
         <h2>Aujourd'hui</h2>
         <div class="stats" id="stats"></div>
-        <p class="hint">🌱 Chaque minute de révision rapporte 1 🪙 et fait pousser ton jardin.</p>
+        <p class="hint">🌱 Chaque minute de révision rapporte 1 🪙 et fait pousser ton jardin. Une session complète : +10 🪙 et +10 💗.</p>
       </div>
     </div>
   </section>
 
-  <!-- COMPAGNONS -->
+  <!-- COLLECTION -->
   <section id="penguin" class="panel">
     <div class="card pet-card">
       <div class="pet-stage scene" id="bigStage"></div>
       <p class="preview-note" id="previewNote"></p>
-      <label class="field">Nom <input id="petName" maxlength="20"></label>
-      <h2>Humeur</h2>
-      <div class="mood"><i id="moodBar"></i></div>
-      <p id="moodText" class="mood-text"></p>
-      <p class="hint" id="moodHint"></p>
+      <label class="field" id="nameField">Nom <input id="petName" maxlength="20"></label>
+      <div class="detail" id="petDetail"></div>
     </div>
     <div class="side">
+      <div class="card">
+        <h2>🗂️ Collection <span class="hint" id="collCount"></span></h2>
+        <p class="hint">Clique sur un compagnon pour voir sa fiche.</p>
+        <div class="grid" id="adopt"></div>
+      </div>
+      <div class="card">
+        <h2>🥚 Couveuse</h2>
+        <div id="eggs"></div>
+      </div>
       <div class="card">
         <h2>💕 La petite amie du pingouin</h2>
         <div id="partnerCard"></div>
       </div>
-      <div class="card">
-        <h2>🐾 Adopter un compagnon</h2>
-        <div class="grid" id="adopt"></div>
-      </div>
-      <div class="card">
-        <h2>👗 Garde-robe</h2>
-        <p class="hint">Clique sur un dessin pour l'essayer avant de l'acheter.</p>
-        <div id="wardrobe"></div>
-      </div>
     </div>
   </section>
 
-  <!-- DÉCO -->
+  <!-- BOUTIQUE -->
   <section id="deco" class="panel">
-    <div class="card">
-      <h2>🏠 Ma pièce</h2>
-      <p class="hint">Clique sur un objet de la boutique pour l'essayer dans ta pièce avant de l'acheter.</p>
+    <div class="card shop-preview">
+      <h2>🛍️ Boutique</h2>
+      <p class="hint">Clique sur un dessin pour l'essayer dans ta pièce avant de l'acheter.</p>
       <div class="scene" id="decoScene"><div class="room"></div></div>
       <p class="preview-note" id="decoNote"></p>
     </div>
     <div class="card">
-      <h2>Boutique déco</h2>
-      <div class="grid" id="decoShop"></div>
+      <div class="modes" id="shopCats"></div>
+      <div id="shopItems"></div>
     </div>
   </section>
 
@@ -151,6 +165,14 @@
     </div>
   </section>
 
+  <!-- SUCCÈS -->
+  <section id="succes" class="panel">
+    <div class="card">
+      <h2>🏆 Succès <span class="hint" id="achCount"></span></h2>
+      <div class="achs" id="achList"></div>
+    </div>
+  </section>
+
   <!-- MATIÈRES -->
   <section id="subjects" class="panel">
     <div class="card">
@@ -166,7 +188,132 @@
       <div id="subjectList"></div>
     </div>
   </section>
+
+  <!-- STATS -->
+  <section id="statsTab" class="panel">
+    <div class="card">
+      <h2 id="reviewTitle"></h2>
+      <div class="review-row"><div class="review-pet" id="reviewPet"></div><p id="reviewText"></p></div>
+    </div>
+    <div class="card">
+      <h2>Mon temps de révision</h2>
+      <div class="stats wide" id="statTiles"></div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h2>🎯 Objectif de la semaine</h2>
+        <label class="field left">Je vise <input id="weekGoal" type="number" min="1" max="80"> h cette semaine</label>
+        <div class="progress big" id="weekGoalBar" role="progressbar" aria-label="Objectif de la semaine" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+        <small id="weekGoalTxt" class="hint"></small>
+      </div>
+      <div class="card">
+        <h2>📅 Examens</h2>
+        <form id="examForm" class="row">
+          <select id="examSub" aria-label="Matière de l'examen"></select>
+          <input id="examDate" type="date" required aria-label="Date de l'examen">
+          <label>Objectif <input id="examHours" type="number" min="1" max="200" value="10" aria-label="Heures de révision visées"> h</label>
+          <button class="btn primary">Ajouter</button>
+        </form>
+        <div id="examList"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>📈 Temps de révision</h2>
+        <div class="modes"><button data-range="7">7 jours</button><button data-range="30">30 jours</button></div></div>
+      <div class="week" id="weekBars"></div>
+    </div>
+    <div class="card">
+      <h2>🗓️ Mon année</h2>
+      <div class="heat" id="heatmap" role="img"></div>
+      <p class="heat-legend hint">Moins <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> Plus</p>
+    </div>
+    <div class="card">
+      <h2>Par matière</h2>
+      <div id="subjectBars"></div>
+    </div>
+  </section>
+
+  <!-- OUTILS -->
+  <section id="outils" class="panel">
+    <div class="card">
+      <h2>✅ À faire</h2>
+      <form id="todoForm" class="row">
+        <input id="todoText" maxlength="80" placeholder="ex : fiche du chapitre 3" required aria-label="Nouvelle tâche">
+        <button class="btn primary">Ajouter</button>
+      </form>
+      <div id="todoList"></div>
+      <p class="hint">🎯 transforme une tâche en objectif de session. Si tu réponds « Oui » au bilan, elle se coche toute seule.</p>
+    </div>
+    <div class="card">
+      <h2>🃏 Fiches de révision</h2>
+      <div id="cardReview"></div>
+      <form id="cardForm" class="stack">
+        <select id="cardSub" aria-label="Matière de la fiche"></select>
+        <input id="cardQ" maxlength="200" placeholder="Question" required aria-label="Question">
+        <input id="cardA" maxlength="300" placeholder="Réponse" required aria-label="Réponse">
+        <button class="btn primary">Ajouter la fiche</button>
+      </form>
+      <details><summary id="cardCount"></summary><div id="cardList"></div></details>
+    </div>
+    <div class="card">
+      <h2>📝 Bloc-notes</h2>
+      <textarea id="notes" rows="10" placeholder="Une idée, une formule, une question pour le prof…" aria-label="Bloc-notes"></textarea>
+      <p class="hint">Enregistré automatiquement.</p>
+    </div>
+  </section>
+
+  <!-- RÉGLAGES -->
+  <section id="settings" class="panel">
+    <div class="card">
+      <h2>⚙️ Réglages</h2>
+      <label class="field left">Taille du texte <select id="fontSize">
+        <option value="0.9">Petite</option><option value="1">Normale</option><option value="1.15">Grande</option><option value="1.3">Très grande</option>
+      </select></label>
+      <p class="hint">Le mode nuit se change avec le bouton 🌙 en haut, le son de fin dans l'onglet Réviser, les thèmes de couleurs dans la Boutique.</p>
+    </div>
+    <div class="card">
+      <h2>💾 Sauvegarde</h2>
+      <p class="hint">Tes données restent dans ce navigateur. Exporte-les de temps en temps pour les garder en sécurité ou les passer sur un autre appareil.</p>
+      <div class="row">
+        <button class="btn primary" id="exportBtn">⬇️ Exporter</button>
+        <button class="btn" id="importBtn">⬆️ Importer</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🪙 Historique des pièces</h2>
+      <div id="txList"></div>
+    </div>
+  </section>
 </main>
+
+<dialog id="debrief" aria-labelledby="debriefTitle">
+  <h2 id="debriefTitle">🌸 Bilan de la session</h2>
+  <div id="debriefGoal">
+    <p></p>
+    <div class="row choice">
+      <button class="btn" data-result="oui">✅ Oui</button>
+      <button class="btn" data-result="partiel">🌗 En partie</button>
+      <button class="btn" data-result="non">🌱 Pas cette fois</button>
+    </div>
+  </div>
+  <p>Comment tu te sens ? <span class="hint">(facultatif)</span></p>
+  <div class="row choice">
+    <button class="btn" data-feel="😫" aria-label="Fatigué">😫</button>
+    <button class="btn" data-feel="😐" aria-label="Bof">😐</button>
+    <button class="btn" data-feel="😊" aria-label="Bien">😊</button>
+  </div>
+  <button class="btn primary wide" data-debrief-ok>Continuer</button>
+</dialog>
+
+<dialog id="tuto" aria-labelledby="tutoTitle"><div id="tutoBody"></div></dialog>
+
+<dialog id="hatchDlg" aria-labelledby="hatchTitle">
+  <h2 id="hatchTitle">🥚 Éclosion</h2>
+  <div class="hatch-stage" id="hatchStage"></div>
+  <p id="hatchMsg" class="hatch-msg" role="status"></p>
+  <button class="btn primary wide" data-hatch-ok>Super !</button>
+</dialog>
 
 <div id="toast" class="toast" role="status"></div>
 <script src="app.js"></script>
