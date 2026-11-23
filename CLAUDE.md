@@ -53,6 +53,8 @@ Single script, organised top to bottom:
    - Escape user-provided strings with `esc()`.
    - `renderTimer()` runs every tick, so keep it cheap.
    - The room (`roomHTML()`) is rendered into both `#scene` (study tab) and `#decoScene` (Boutique tab). Only the Boutique copy shows `tryDecor` and the accessory `tryOn`.
+   - Rooms (`ROOMS`, `S.room`) and window views (`VIEWS`, `S.view`) are bought in the Boutique like themes (`equipOrBuy`, `useBtn`). A room is the `data-chambre` attribute on the scene: CSS styles `.wall` / `.floor`, which `roomHTML()` outputs first so decor and pets stay on top. A view is the markup inside `.window`.
+   - The "Mini ville" view is the portfolio's pixel-art city (`VILLE`). It is drawn into one off-screen 160×66 canvas and copied into every `canvas.ville`. Call `VILLE.sync()` after rendering a room: it starts the `requestAnimationFrame` loop, which stops by itself when no city canvas is left. Clicking a building lights its floors one by one.
    - Tab ids are historical: `#penguin` is Collection, `#deco` is Boutique. `#settings` (Réglages) is opened by the ⚙️ button in the header. `#outils` holds to-dos (`S.todos`, linked to the session goal), flashcards (`S.cards`, Leitner boxes 0–4) and notes (`S.notes`).
    - `renderStats()` builds the heatmap, the 7/30-day chart (`statRange`), the weekly goal (`S.weekGoal`), exams (`S.exams`, progress = sessions of that subject since `from`) and the companion's weekly review (`weekReview()`). `renderShop()` renders the category in `shopCat` from the `SHOP` table.
    - `renderAll()` starts with `checkAch()`, which unlocks achievements and friendship cosmetics. Toasts go through a queue, so several can fire in a row.

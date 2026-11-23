@@ -397,3 +397,44 @@ textarea, .wide-input {
 #tuto { max-width: min(460px, 92vw); }
 #settings .card:last-child { grid-column: 1 / -1; }
 .flash .choice .btn { padding: .55rem .9rem; }
+
+/* chambres : murs et sol (les éléments .wall/.floor sont sous la déco et les compagnons) */
+.wall, .floor { position: absolute; left: 0; right: 0; }
+.wall { top: 0; height: 74%; }
+.floor { top: 74%; bottom: 0; }
+body.night .wall, body.night .floor { filter: brightness(.55) saturate(.85); }
+[data-chambre=fleurie] .wall { background: radial-gradient(circle, #f6b9cc 0 3px, transparent 4px) 0 0 / 26px 26px, radial-gradient(circle, #bfe5cf 0 3px, transparent 4px) 13px 13px / 26px 26px, #fff1f4; }
+[data-chambre=fleurie] .floor { background: #e9cdd8; }
+[data-chambre=bois] .wall { background: repeating-linear-gradient(90deg, #ecd0ad 0 34px, #dcb790 34px 36px); }
+[data-chambre=bois] .floor { background: repeating-linear-gradient(90deg, #b98a62 0 60px, #a57852 60px 62px); }
+[data-chambre=serre] .wall { background: repeating-linear-gradient(90deg, #e2f4e8 0 44px, #c4e6cf 44px 48px); }
+[data-chambre=serre] .floor { background: repeating-linear-gradient(45deg, #ece6d6 0 14px, #ddd5c1 14px 28px); }
+[data-chambre=zen] .wall { background: repeating-linear-gradient(90deg, transparent 0 38px, #d8c7a8 38px 41px), repeating-linear-gradient(0deg, transparent 0 38px, #d8c7a8 38px 41px), #f7f0e2; }
+[data-chambre=zen] .floor { background: repeating-linear-gradient(90deg, #d3d9ab 0 70px, #b9c28c 70px 73px); }
+[data-chambre=grenier] .wall { background: radial-gradient(#fff9 1px, transparent 1.5px) 0 0 / 22px 20px, radial-gradient(#fde49a 1.2px, transparent 2px) 11px 9px / 33px 29px, linear-gradient(180deg, #2f3a6b, #47548f); }
+[data-chambre=grenier] .floor { background: repeating-linear-gradient(90deg, #8b6b5a 0 50px, #7a5c4d 50px 52px); }
+[data-chambre=grenier] #time, [data-chambre=grenier] #phase { color: #f3eefc; } /* minuteur lisible sur le mur sombre */
+.room-swatch { position: relative; display: block; width: 92px; height: 62px; margin: .3rem; border-radius: 12px; overflow: hidden; background: linear-gradient(180deg, var(--wall) 0 74%, var(--floor) 74%); }
+
+/* vues de la fenêtre */
+.sky.v-neige { background: linear-gradient(180deg, #b9c7e3, #e8eef8); }
+body.night .sky.v-neige { background: linear-gradient(180deg, #2c3561, #56608f); }
+.v-neige::after { content: ""; position: absolute; left: -5%; right: -5%; bottom: -6px; height: 20px; border-radius: 50%; background: #fbfdff; }
+.v-neige i { position: absolute; top: -8px; width: 5px; height: 5px; border-radius: 50%; background: #fff; animation: snow linear infinite; }
+@keyframes snow { to { transform: translate(16px, 160px); } }
+.sky.v-etoiles { background: linear-gradient(180deg, #14112e, #3b2a6b); }
+.sky.v-etoiles .stars, .sky.v-etoiles .moon { opacity: 1; }
+.v-etoiles .stars { animation: twinkle 3s ease-in-out infinite; }
+.v-etoiles .stars.s2 { background-position: 11px 7px, 30px 17px; animation-delay: -1.5s; }
+.shoot { position: absolute; top: 12px; left: 80%; width: 46px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #fff, transparent); opacity: 0; animation: shoot 7s ease-in infinite; }
+.shoot.s2 { top: 30px; left: 55%; animation-delay: -3.5s; animation-duration: 9s; }
+@keyframes shoot { 0%, 70% { opacity: 0; transform: translate(0, 0) rotate(-20deg); } 72% { opacity: 1; } 86%, 100% { opacity: 0; transform: translate(-140px, 50px) rotate(-20deg); } }
+.sky.v-orage { background: linear-gradient(180deg, #3b3f5c, #6b7090); }
+.sky.v-orage .cloud { background: #8b90ad; opacity: 1; }
+.v-orage .cloud.c3 { top: 30px; left: -60px; animation-delay: -12s; transform: scale(1.3); }
+.bolt { position: absolute; left: 38%; top: 14px; width: 24px; opacity: 0; animation: bolt 7s infinite; }
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; animation: flash 7s infinite; }
+@keyframes flash { 0%, 88%, 91%, 95%, 100% { opacity: 0; } 89% { opacity: .75; } 93% { opacity: .45; } }
+@keyframes bolt { 0%, 88%, 95%, 100% { opacity: 0; } 89%, 94% { opacity: 1; } }
+canvas.ville { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; cursor: pointer; }
+.window .rain, .window .frame, .flash { pointer-events: none; } /* laisse passer les clics vers la mini ville */

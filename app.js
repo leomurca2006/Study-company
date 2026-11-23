@@ -91,6 +91,7 @@ const DEFAULT = {
   night: matchMedia('(prefers-color-scheme: dark)').matches, vol: { lofi: 0, rain: 0, wind: 0, cars: 0, cafe: 0, foret: 0 },
   eggs: [], hatched: 0, ach: [], freezes: 0, harvested: 0, bought: 0,
   sounds: ['lofi', 'rain', 'wind', 'cars'], theme: 'lavande', themes: ['lavande'],
+  room: 'douce', rooms: ['douce'], view: 'ciel', views: ['ciel'],
   tx: [], weekGoal: 5, exams: [], todos: [], cards: [], notes: '', font: 1, reviewSeen: null,
 };
 let S;
@@ -405,14 +406,197 @@ function checkAch() { // appelé à chaque rendu : débloque succès et accessoi
   });
   if (S.ach.length + S.owned.length !== before) save();
 }
-function roomHTML(trying, eqMain = S.equip, eqPartner = S.partnerEquip) { // trying : objet affiché à l'essai, sans l'acheter
+// Chambres : le motif des murs et du sol est en CSS ([data-chambre=…] .wall / .floor)
+const ROOMS = {
+  douce: { name: 'Chambre douce', price: 0, desc: 'Murs pastel, tout simplement' },
+  fleurie: { name: 'Papier peint fleuri', price: 200, desc: 'Petits pois roses et menthe' },
+  bois: { name: 'Cabane en bois', price: 250, desc: 'Des planches chaleureuses' },
+  serre: { name: 'Véranda', price: 300, desc: 'Lattes vertes et carrelage' },
+  zen: { name: 'Chambre zen', price: 350, desc: 'Cloisons de papier et nattes' },
+  grenier: { name: 'Grenier étoilé', price: 450, desc: 'Un ciel peint au mur' },
+};
+// Vues de la fenêtre
+const VIEWS = {
+  ciel: { name: 'Ciel changeant', icon: '⛅', price: 0, desc: 'Soleil le jour, lune la nuit',
+    html: () => '<div class="sky"><span class="stars"></span><span class="sun"></span><span class="moon"></span><span class="cloud c1"></span><span class="cloud c2"></span></div>' },
+  neige: { name: 'Neige', icon: '❄️', price: 200, desc: 'Des flocons qui tombent doucement',
+    html: () => `<div class="sky v-neige">${Array.from({ length: 16 }, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-duration:${4 + (i % 4)}s;animation-delay:-${(i * 0.7).toFixed(1)}s"></i>`).join('')}</div>` },
+  etoiles: { name: 'Nuit étoilée', icon: '🌌', price: 250, desc: 'Étoiles qui scintillent et étoiles filantes',
+    html: () => '<div class="sky v-etoiles"><span class="stars"></span><span class="stars s2"></span><span class="moon"></span><i class="shoot"></i><i class="shoot s2"></i></div>' },
+  orage: { name: 'Orage', icon: '⛈️', price: 300, desc: 'Pluie battante et éclairs',
+    html: () => '<div class="sky v-orage"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span><svg class="bolt" viewBox="0 0 20 40" aria-hidden="true"><path d="M12 0L2 22h7L5 40l13-25h-7z" fill="#fff6b0"/></svg><span class="flash"></span></div>' },
+  ville: { name: 'Mini ville', icon: '🌃', price: 450, desc: 'Une ville en pixels qui vit la nuit. Clique sur un immeuble !',
+    html: () => `<canvas class="ville" width="${VILLE.W}" height="${VILLE.H}" aria-hidden="true"></canvas>` },
+};
+function roomHTML(trying, eqMain = S.equip, eqPartner = S.partnerEquip, view = S.view) { // trying : objet affiché à l'essai, sans l'acheter
   let on = Object.keys(DECOR).filter(id => S.decor.on.includes(id));
   if (trying && !on.includes(trying)) on = [...on.filter(id => !(DECOR[trying].rug && DECOR[id].rug)), trying];
   const rug = on.map(id => DECOR[id].rug).find(Boolean);
-  return `<div class="window"><div class="sky"><span class="stars"></span><span class="sun"></span><span class="moon"></span><span class="cloud c1"></span><span class="cloud c2"></span></div><div class="rain"></div><div class="frame"></div></div>
+  return `<div class="wall"></div><div class="floor"></div>
+    <div class="window">${VIEWS[view].html()}<div class="rain"${view === 'orage' ? ' style="--rain:.9"' : ''}></div><div class="frame"></div></div>
     ${on.map(id => DECOR[id].html || '').join('')}
     ${rug ? `<div class="rug" style="background:${rug}"></div>` : ''}${petsHTML(S.species, S.partner, eqMain, eqPartner)}`;
 }
+
+// ---------- Vue « Mini ville » : la ville en pixel-art du portfolio, en petit ----------
+// Dessinée dans un canvas hors écran de W×H pixels, puis copiée dans chaque fenêtre qui affiche cette vue.
+const VILLE = (() => {
+  const W = 160, H = 66;
+  const FEN = ['#FFC46B', '#FFC46B', '#FFC46B', '#FFD99A', '#FF8FE6', '#8FF0FF'], NEONS = ['#FF4FD8', '#4FE3FF'];
+  const COUCHES = [ // du fond vers le premier plan
+    { corps: '#2D1A62', eteinte: '#35206F', hMin: 0.3, hMax: 0.62, lMin: 9, lMax: 20, fw: 1, fh: 1, px: 3, py: 3, densite: 0.16, brume: [120, 40, 150, 0.32] },
+    { corps: '#201246', eteinte: '#2A1957', hMin: 0.24, hMax: 0.5, lMin: 13, lMax: 26, fw: 2, fh: 2, px: 4, py: 4, densite: 0.28, brume: [60, 18, 96, 0.38] },
+    { corps: '#150B31', eteinte: '#1F1243', hMin: 0.16, hMax: 0.38, lMin: 18, lMax: 34, fw: 2, fh: 3, px: 5, py: 5, densite: 0.36, neon: true },
+  ];
+  const off = document.createElement('canvas'); off.width = W; off.height = H;
+  const c = off.getContext('2d', { alpha: false });
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)');
+  const entre = (a, b) => a + Math.random() * (b - a);
+  let couches, fenetres, etoiles, gouttes, filantes = [], t = 0, dernier = 0, raf = 0, prochaine = 200;
+
+  function generer() { // toujours la même ville (graine fixe)
+    let g = 2026;
+    const al = () => (g = (Math.imul(g, 1664525) + 1013904223) >>> 0) / 4294967296, en = (a, b) => a + al() * (b - a);
+    fenetres = [];
+    couches = COUCHES.map((d, idx) => {
+      const bats = [];
+      for (let x = Math.floor(al() * 6) - 4; x < W + 4;) {
+        const w = Math.round(en(d.lMin, d.lMax)), h = Math.round(H * en(d.hMin, d.hMax));
+        const b = { x, w, h, fen: [], etages: 0, cascade: null, toit: null, enseigne: null }, r = al();
+        if (r < 0.28 && idx > 0) b.toit = { type: 'antenne', h: Math.round(en(3, 7)), dx: Math.floor(en(2, w - 2)), phase: Math.floor(al() * 90) };
+        else if (r < 0.55) { const lw = Math.max(4, Math.round(w * en(0.35, 0.6))); b.toit = { type: 'marche', w: lw, h: Math.round(en(2, 4)), dx: Math.floor(en(1, w - lw)) }; }
+        const mx = idx ? 2 : 1, dy = idx ? 4 : 3;
+        const cols = Math.max(1, Math.floor((w - mx * 2 + (d.px - d.fw)) / d.px)), decal = Math.floor((w - (cols * d.px - (d.px - d.fw))) / 2);
+        b.etages = Math.max(0, Math.floor((h - dy - 3) / d.py));
+        for (let ly = 0; ly < b.etages; ly++) for (let cx = 0; cx < cols; cx++) {
+          const f = { b, x: decal + cx * d.px, y: dy + ly * d.py, etage: b.etages - 1 - ly, on: al() < d.densite, coul: FEN[Math.floor(al() * FEN.length)] };
+          b.fen.push(f); fenetres.push(f);
+        }
+        if (d.neon && w >= 22 && al() < 0.38) b.enseigne = { x: al() < 0.5 ? 1 : w - 4, y: Math.round(en(4, Math.max(5, h * 0.3))), w: 3, h: Math.round(en(6, 10)), coul: NEONS[Math.floor(al() * 2)], panne: 0 };
+        bats.push(b); x += w + Math.round(en(idx ? 1 : 0, idx ? 5 : 3));
+      }
+      return { d, bats };
+    });
+    etoiles = Array.from({ length: 40 }, () => ({ x: Math.floor(al() * W), y: Math.floor(al() * H * 0.62), v: en(0.01, 0.05), p: al() * 6.28, b: al() < 0.12 }));
+    gouttes = Array.from({ length: 50 }, () => goutte(true));
+  }
+  const goutte = partout => ({ x: entre(-20, W + 40), y: partout ? entre(-H, H) : entre(-30, -4), l: Math.round(entre(3, 6)), v: entre(1.6, 2.8), a: entre(0.12, 0.3) });
+  const filante = (x = entre(W * 0.2, W * 0.9), y = entre(3, H * 0.3)) => filantes.push({ x, y, vx: -entre(1.4, 2.1), vy: entre(0.45, 0.75), vie: 1 });
+
+  function mettreAJour(dt) {
+    if (Math.random() < dt * 0.06) { // une fenêtre s'allume ou s'éteint
+      const f = fenetres[Math.floor(Math.random() * fenetres.length)];
+      if (f && !f.b.cascade) { f.on = !f.on; if (f.on) f.coul = FEN[Math.floor(Math.random() * FEN.length)]; }
+    }
+    for (const { bats } of couches) for (const b of bats) {
+      const e = b.enseigne;
+      if (e) { if (e.panne > 0) e.panne -= dt; else if (Math.random() < 0.0025 * dt) e.panne = entre(6, 26); } // néon en panne
+      if (b.cascade) cascade(b, Math.floor((t - b.cascade.debut) / 2.5));
+    }
+    if ((prochaine -= dt) <= 0) { filante(); prochaine = entre(360, 820); }
+  }
+  function cascade(b, n) { // les étages s'allument (ou s'éteignent) un par un
+    for (const f of b.fen) {
+      if (b.cascade.mode === 'on' && f.etage <= n && !f.on) { f.on = true; f.coul = b.cascade.coul; }
+      else if (b.cascade.mode === 'off' && b.etages - 1 - f.etage <= n) f.on = false;
+    }
+    if (n >= b.etages) b.cascade = null;
+  }
+
+  function dessiner(dt, anime) {
+    const g = c.createLinearGradient(0, 0, 0, H);
+    [[0, '#110927'], [0.45, '#241050'], [0.75, '#4B1A72'], [1, '#7A2380']].forEach(([o, k]) => g.addColorStop(o, k));
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    const lueur = c.createRadialGradient(W * 0.35, H * 1.05, 0, W * 0.35, H * 1.05, W * 0.7);
+    lueur.addColorStop(0, 'rgba(255, 79, 216, 0.35)'); lueur.addColorStop(1, 'rgba(255, 79, 216, 0)');
+    c.fillStyle = lueur; c.fillRect(0, 0, W, H);
+    for (const e of etoiles) {
+      c.globalAlpha = anime ? 0.35 + 0.65 * Math.abs(Math.sin(t * e.v + e.p)) : 0.7;
+      c.fillStyle = e.b ? '#BFF6FF' : '#FFFFFF'; c.fillRect(e.x, e.y, 1, 1);
+    }
+    c.globalAlpha = 1;
+    const lx = Math.round(W * 0.82), ly = Math.round(H * 0.2), r = 5; // lune
+    const halo = c.createRadialGradient(lx, ly, r * 0.5, lx, ly, r * 5);
+    halo.addColorStop(0, 'rgba(255, 220, 255, 0.28)'); halo.addColorStop(1, 'rgba(255, 220, 255, 0)');
+    c.fillStyle = halo; c.fillRect(lx - r * 5, ly - r * 5, r * 10, r * 10);
+    c.fillStyle = '#FBE9FF'; c.beginPath(); c.arc(lx, ly, r, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#E7CFF5'; c.fillRect(lx - 2, ly - 1, 2, 2); c.fillRect(lx + 1, ly + 2, 1, 1);
+    if (anime) for (let i = filantes.length - 1; i >= 0; i--) {
+      const f = filantes[i];
+      f.x += f.vx * dt; f.y += f.vy * dt; f.vie -= 0.012 * dt;
+      if (f.vie <= 0 || f.x < -20) { filantes.splice(i, 1); continue; }
+      for (let k = 0; k < 8; k++) {
+        c.globalAlpha = f.vie * (1 - k / 8); c.fillStyle = k ? '#BFF6FF' : '#FFFFFF';
+        c.fillRect(Math.round(f.x - f.vx * k * 0.9), Math.round(f.y - f.vy * k * 0.9), 1, 1);
+      }
+    }
+    c.globalAlpha = 1;
+    for (const { d, bats } of couches) {
+      for (const b of bats) {
+        const by = H - b.h;
+        c.fillStyle = d.corps; c.fillRect(b.x, by, b.w, b.h);
+        if (b.toit?.type === 'marche') c.fillRect(b.x + b.toit.dx, by - b.toit.h, b.toit.w, b.toit.h);
+        if (b.toit?.type === 'antenne') {
+          c.fillRect(b.x + b.toit.dx, by - b.toit.h, 1, b.toit.h);
+          if (!anime || (t + b.toit.phase) % 90 < 40) { c.fillStyle = '#FF5A7A'; c.fillRect(b.x + b.toit.dx, by - b.toit.h - 1, 1, 1); }
+        }
+        for (const f of b.fen) { c.fillStyle = f.on ? f.coul : d.eteinte; c.fillRect(b.x + f.x, by + f.y, d.fw, d.fh); }
+        const e = b.enseigne;
+        if (!e) continue;
+        if (anime && e.panne > 0 && Math.random() < 0.5) { c.fillStyle = '#3A2357'; c.fillRect(b.x + e.x, by + e.y, e.w, e.h); continue; }
+        c.fillStyle = e.coul;
+        c.globalAlpha = 0.22; c.fillRect(b.x + e.x - 2, by + e.y - 2, e.w + 4, e.h + 4);
+        c.globalAlpha = 0.45; c.fillRect(b.x + e.x - 1, by + e.y - 1, e.w + 2, e.h + 2);
+        c.globalAlpha = 1; c.fillRect(b.x + e.x, by + e.y, e.w, e.h);
+        c.fillStyle = '#FFFFFF'; c.fillRect(b.x + e.x + 1, by + e.y + 1, 1, e.h - 2);
+      }
+      if (d.brume) { // brume entre les plans
+        const [rr, gg, bb, a] = d.brume, haut = H * 0.35, gr = c.createLinearGradient(0, haut, 0, H);
+        gr.addColorStop(0, `rgba(${rr},${gg},${bb},0)`); gr.addColorStop(1, `rgba(${rr},${gg},${bb},${a})`);
+        c.fillStyle = gr; c.fillRect(0, haut, W, H - haut);
+      }
+    }
+    if (!anime) return;
+    c.strokeStyle = 'rgb(190, 200, 255)'; c.lineWidth = 1;
+    gouttes.forEach((g, i) => {
+      g.y += g.v * dt; g.x -= g.v * 0.22 * dt;
+      if (g.y > H + 8) return (gouttes[i] = goutte(false));
+      c.globalAlpha = g.a; c.beginPath();
+      c.moveTo(Math.round(g.x) + 0.5, Math.round(g.y)); c.lineTo(Math.round(g.x + g.l * 0.22) + 0.5, Math.round(g.y - g.l)); c.stroke();
+    });
+    c.globalAlpha = 1;
+  }
+  const copier = cvs => cvs.forEach(k => k.getContext('2d').drawImage(off, 0, 0));
+  function image(now) {
+    const cvs = document.querySelectorAll('canvas.ville');
+    if (!cvs.length) { raf = 0; return; } // plus aucune fenêtre avec la ville : on s'arrête
+    const dt = dernier ? Math.min(3, (now - dernier) / 16.667) : 1;
+    dernier = now; t += dt;
+    mettreAJour(dt); dessiner(dt, true); copier(cvs);
+    raf = requestAnimationFrame(image);
+  }
+  return {
+    W, H,
+    sync() { // à appeler après chaque rendu d'une pièce
+      const cvs = document.querySelectorAll('canvas.ville');
+      if (!cvs.length) return;
+      if (!couches) generer();
+      if (reduit.matches) { dessiner(0, false); copier(cvs); }
+      else if (!raf) { dernier = 0; raf = requestAnimationFrame(image); }
+    },
+    click(e) { // clic sur un immeuble : cascade d'étages ; dans le ciel : étoile filante
+      const rect = e.target.getBoundingClientRect(), x = (e.clientX - rect.left) / rect.width * W, y = (e.clientY - rect.top) / rect.height * H;
+      for (let i = couches.length - 1; i >= 0; i--) for (const b of couches[i].bats) {
+        if (x < b.x || x >= b.x + b.w || y < H - b.h || !b.fen.length) continue;
+        const mode = b.fen.filter(f => f.on).length / b.fen.length > 0.55 ? 'off' : 'on';
+        b.cascade = { debut: t, mode, coul: FEN[Math.floor(Math.random() * FEN.length)] };
+        if (reduit.matches) { cascade(b, b.etages); this.sync(); }
+        return;
+      }
+      if (!reduit.matches) filante(x + 12, y - 4);
+    },
+  };
+})();
 
 // ---------- Ambiance sonore (générée, aucun fichier audio) ----------
 let AC;
@@ -824,7 +1008,7 @@ function exportSave() {
 async function importSave(file) {
   let data;
   try { data = JSON.parse(await file.text()); } catch {}
-  const arrays = ['subjects', 'sessions', 'pets', 'eggs', 'ach', 'owned', 'todos', 'cards', 'exams', 'tx'];
+  const arrays = ['subjects', 'sessions', 'pets', 'eggs', 'ach', 'owned', 'todos', 'cards', 'exams', 'tx', 'rooms', 'views'];
   if (!data || typeof data !== 'object' || typeof data.coins !== 'number' || !Array.isArray(data.subjects) || arrays.some(k => k in data && !Array.isArray(data[k])))
     return toast('Ce fichier ne ressemble pas à une sauvegarde du Jardin 🤔');
   if (!confirm('Remplacer toutes tes données actuelles par cette sauvegarde ?')) return;
@@ -929,7 +1113,9 @@ function howToGet(k) {
 
 function renderCompanions() {
   $$('.scene').forEach(s => s.classList.toggle('has-partner', S.partner));
+  $('#scene').dataset.chambre = S.room;
   $('#scene .room').innerHTML = roomHTML();
+  VILLE.sync();
   const sel = selPet(), owned = S.pets.includes(sel), pvPartner = S.partner || preview === 'pingouine';
   $('#bigStage').classList.toggle('has-partner', pvPartner);
   $('#bigStage').classList.toggle('locked', !owned);
@@ -974,7 +1160,10 @@ function renderCompanions() {
     </div></div>`;
 }
 
-const SHOP_CATS = { oeufs: '🥚 Œufs', accessoires: '👗 Accessoires', decor: '🏠 Décor', ambiances: '🎧 Ambiances', utilitaires: '🧰 Utilitaires' };
+let tryRoom = null, tryView = null; // chambre et vue essayées dans la boutique
+// thèmes, chambres, vues : « ✓ Actif », « Utiliser » ou le prix
+const useBtn = (owned, active, attr, price) => active ? '<span class="owned">✓ Actif</span>' : owned ? `<button class="btn" ${attr}>Utiliser</button>` : buyBtn(attr, price);
+const SHOP_CATS = { oeufs: '🥚 Œufs', accessoires: '👗 Accessoires', decor: '🏠 Décor', chambres: '🛏️ Chambres', vues: '🪟 Vues', ambiances: '🎧 Ambiances', utilitaires: '🧰 Utilitaires' };
 const SHOP = {
   oeufs: () => `<p class="hint">Un œuf éclot après un temps de révision et donne un compagnon que tu n'as pas encore. Il se couve dans l'onglet Collection.</p><div class="grid">` +
     Object.entries(EGGS).map(([k, E]) => card(`<span class="egg-icon" style="--r:${E.color}">🥚</span>`, E.name,
@@ -1003,13 +1192,27 @@ const SHOP = {
       S.freezes >= CFG.freezeMax ? '<span class="owned">✓ Réserve pleine</span>' : buyBtn('data-freeze', CFG.freezePrice)) + '</div>' +
     '<h3 class="slot-title">🎨 Thèmes de couleurs</h3><p class="hint">Clique sur une pastille pour essayer. Le mode nuit reste gratuit (bouton 🌙 en haut).</p><div class="grid">' +
     Object.entries(THEMES).map(([k, t]) => card(`<button class="preview-btn ${tryTheme === k ? 'trying' : ''}" data-try-theme="${k}" aria-label="Essayer le thème ${t.name}"><span class="swatch" style="--r:${t.color}"></span></button>`, t.name, '',
-      S.theme === k ? '<span class="owned">✓ Actif</span>' : S.themes.includes(k) ? `<button class="btn" data-theme="${k}">Utiliser</button>` : buyBtn(`data-theme="${k}"`, t.price))).join('') + '</div>',
+      useBtn(S.themes.includes(k), S.theme === k, `data-theme="${k}"`, t.price))).join('') + '</div>',
+  chambres: () => '<p class="hint">Clique sur une chambre pour l\'essayer dans l\'aperçu.</p><div class="grid">' + Object.entries(ROOMS).map(([k, r]) =>
+    card(`<button class="preview-btn ${tryRoom === k ? 'trying' : ''}" data-try-room="${k}" aria-label="Essayer : ${r.name}"><span class="room-swatch" data-chambre="${k}"><span class="wall"></span><span class="floor"></span></span></button>`,
+      r.name, r.desc, useBtn(S.rooms.includes(k), S.room === k, `data-room="${k}"`, r.price))).join('') + '</div>',
+  vues: () => '<p class="hint">Clique sur une vue pour la voir dans la fenêtre de l\'aperçu.</p><div class="grid">' + Object.entries(VIEWS).map(([k, v]) =>
+    card(`<button class="preview-btn ${tryView === k ? 'trying' : ''}" data-try-view="${k}" aria-label="Essayer : ${v.name}"><span class="emoji">${v.icon}</span></button>`,
+      v.name, v.desc, useBtn(S.views.includes(k), S.view === k, `data-view="${k}"`, v.price))).join('') + '</div>',
 };
+function equipOrBuy(listKey, curKey, id, item) { // achète si besoin, puis utilise (thèmes, chambres, vues)
+  if (!S[listKey].includes(id)) { if (!buy(item.price, item.name)) return; S[listKey].push(id); }
+  S[curKey] = id; save(); renderAll();
+}
 function renderShop() {
   const tc = tryOn && COSMETICS[tryOn.id], withTry = (eq, who) => tc && tryOn.who === who ? { ...eq, [tc.slot]: tryOn.id } : eq;
-  $('#decoScene .room').innerHTML = roomHTML(tryDecor, withTry(S.equip, 'main'), withTry(S.partnerEquip, 'partner'));
+  $('#decoScene').dataset.chambre = tryRoom || S.room;
+  $('#decoScene .room').innerHTML = roomHTML(tryDecor, withTry(S.equip, 'main'), withTry(S.partnerEquip, 'partner'), tryView || S.view);
+  VILLE.sync();
   const td = tryDecor && DECOR[tryDecor];
   $('#decoNote').innerHTML = [td && `🏠 Essai : ${td.name} <button class="link" data-try-decor="${tryDecor}">Retirer l'essai</button>`,
+    tryRoom && `🛏️ Essai : ${ROOMS[tryRoom].name} <button class="link" data-try-room="${tryRoom}">Retirer l'essai</button>`,
+    tryView && `🪟 Essai : ${VIEWS[tryView].name} <button class="link" data-try-view="${tryView}">Retirer l'essai</button>`,
     tc && `👗 Essai : ${tc.name} <button class="link" data-try="${tryOn.id}">Retirer l'essai</button>`].filter(Boolean).join('<br>');
   $('#shopCats').innerHTML = Object.entries(SHOP_CATS).map(([k, l]) => `<button data-cat="${k}" class="${shopCat === k ? 'active' : ''}">${l}</button>`).join('');
   $('#shopItems').innerHTML = SHOP[shopCat]();
@@ -1137,11 +1340,11 @@ document.addEventListener('click', e => {
     S.freezes++; toast('🧊 Gel de série en réserve'); save(); renderAll();
   }
   if (ds.tryTheme) { tryTheme = tryTheme === ds.tryTheme ? null : ds.tryTheme; renderHeader(); renderShop(); }
-  if (ds.theme) {
-    const t = THEMES[ds.theme];
-    if (!S.themes.includes(ds.theme)) { if (!buy(t.price, `Thème ${t.name}`)) return; S.themes.push(ds.theme); }
-    S.theme = ds.theme; tryTheme = null; save(); renderAll();
-  }
+  if (ds.theme) { tryTheme = null; equipOrBuy('themes', 'theme', ds.theme, { ...THEMES[ds.theme], name: `Thème ${THEMES[ds.theme].name}` }); }
+  if (ds.tryRoom) { tryRoom = tryRoom === ds.tryRoom ? null : ds.tryRoom; renderShop(); }
+  if (ds.tryView) { tryView = tryView === ds.tryView ? null : ds.tryView; renderShop(); }
+  if (ds.room) { tryRoom = null; equipOrBuy('rooms', 'room', ds.room, ROOMS[ds.room]); }
+  if (ds.view) { tryView = null; equipOrBuy('views', 'view', ds.view, VIEWS[ds.view]); }
   if (ds.cos) {
     const c = COSMETICS[ds.cos], eq = dressing === 'partner' ? S.partnerEquip : S.equip;
     if (!S.owned.includes(ds.cos)) {
@@ -1262,6 +1465,8 @@ $$('[data-cfg]').forEach(i => i.addEventListener('change', () => {
   if (!T.started) setPhase(T.phase);
 }));
 
+document.addEventListener('click', e => e.target.matches('canvas.ville') && VILLE.click(e));
+
 document.addEventListener('change', e => {
   const ds = e.target.dataset, sub = S.subjects.find(s => s.id == (ds.subName || ds.subColor));
   if (sub) {
@@ -1307,6 +1512,8 @@ S.decor.owned = S.decor.owned.filter(id => DECOR[id]); S.decor.on = S.decor.on.f
 S.eggs = S.eggs.filter(e => EGGS[e?.type]); S.sounds = S.sounds.filter(k => AMBIANCES[k]);
 S.plots = S.plots.map(p => p && PLANTS[p.type] ? p : null);
 if (!THEMES[S.theme]) S.theme = 'lavande';
+S.rooms = S.rooms.filter(k => ROOMS[k]); if (!ROOMS[S.room]) S.room = 'douce';
+S.views = S.views.filter(k => VIEWS[k]); if (!VIEWS[S.view]) S.view = 'ciel';
 
 applyDecay(); // avant la reprise du minuteur, qui peut terminer une session et effacer l'absence
 // reprise du minuteur après un rechargement
