@@ -27,7 +27,6 @@
   <button data-tab="outils">🧰 Outils</button>
   <button data-tab="penguin">🐾 Collection</button>
   <button data-tab="deco">🛍️ Boutique</button>
-  <button data-tab="garden">🌷 Jardin</button>
   <button data-tab="missions">📜 Missions</button>
   <button data-tab="succes">🏆 Succès</button>
   <button data-tab="subjects">📚 Matières</button>
@@ -119,27 +118,10 @@
     </div>
   </section>
 
-  <!-- JARDIN -->
-  <section id="garden" class="panel">
-    <div class="card">
-      <h2>Mon jardin</h2>
-      <p class="hint" id="gardenHint"></p>
-      <div class="garden-scene" id="plots"></div>
-    </div>
-    <div class="card">
-      <h2>Mon sac de graines</h2>
-      <div class="inv" id="inv"></div>
-    </div>
-    <div class="card">
-      <h2>Boutique de graines</h2>
-      <div class="shop" id="shop"></div>
-    </div>
-  </section>
-
   <!-- MISSIONS -->
   <section id="missions" class="panel">
     <div class="card">
-      <h2>Événement du jour</h2>
+      <h2>Événement du mois</h2>
       <div id="eventCard"></div>
     </div>
     <div class="card">
@@ -177,7 +159,7 @@
     <div class="card">
       <h2>Aujourd'hui</h2>
       <div class="stats" id="stats"></div>
-      <p class="hint">🌱 Chaque minute de révision rapporte 1 🪙 et fait pousser ton jardin. Une session complète : +10 🪙 et +10 💗.</p>
+      <p class="hint">🌱 Chaque minute de révision rapporte 1 🪙 et 1 💗, et fait couver tes œufs. Une session complète : +10 🪙.</p>
     </div>
     <div class="card">
       <h2 id="reviewTitle"></h2>
@@ -247,7 +229,8 @@
     </div>
     <div class="card">
       <h2>🃏 Fiches de révision</h2>
-      <div id="cardReview"></div>
+      <p class="hint">Choisis une matière pour réviser ses fiches.</p>
+      <div id="deckList" class="deck-list"></div>
       <form id="cardForm" class="stack">
         <select id="cardSub" aria-label="Matière de la fiche"></select>
         <input id="cardQ" maxlength="200" placeholder="Question" required aria-label="Question">
@@ -307,7 +290,9 @@
   <button class="btn primary wide" data-debrief-ok>Continuer</button>
 </dialog>
 
-<dialog id="quitDlg" aria-labelledby="quitTitle">
+<dialog id="deckDlg" aria-labelledby="deckTitle"><div id="deckBody"></div></dialog>
+
+<dialog id="quitDlg"aria-labelledby="quitTitle">
   <h2 id="quitTitle">🍅 Abandonner la session ?</h2>
   <p>Es-tu sûr de vouloir abandonner ? Pas de problème : tu conserves les pièces gagnées 🪙</p>
   <div class="row choice">

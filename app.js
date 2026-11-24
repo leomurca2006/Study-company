@@ -24,24 +24,13 @@ const levelOf = pa => LEVELS.filter(x => pa >= x).length;
 const PRESETS = { classique: [25, 5, 15], long: [50, 10, 20], intense: [90, 20, 30] }; // travail, pause, grande pause
 
 // ---------- Données du jeu ----------
-// grow = minutes de révision nécessaires, reward = pièces à la récolte
-const PLANTS = {
-  marguerite: { name: 'Marguerite', price: 10, grow: 30,  reward: 20,  stages: ['🌱', '🌿', '🌼'] },
-  tulipe:     { name: 'Tulipe',     price: 20, grow: 60,  reward: 45,  stages: ['🌱', '🌿', '🌷'] },
-  tournesol:  { name: 'Tournesol',  price: 35, grow: 90,  reward: 80,  stages: ['🌱', '🌿', '🌻'] },
-  rose:       { name: 'Rose',       price: 50, grow: 120, reward: 120, stages: ['🌱', '🌿', '🌹'] },
-  hibiscus:   { name: 'Hibiscus',   price: 65, grow: 150, reward: 160, stages: ['🌱', '🌿', '🌺'] },
-  cerisier:   { name: 'Cerisier',   price: 90, grow: 200, reward: 240, stages: ['🌱', '🪴', '🌸'] },
-};
-
 // Un événement par mois, qui dure une semaine (CFG.eventDays) ; le reste du mois, CALM
 const CALM = { icon: '🍃', name: 'Semaine calme', desc: 'Rien de spécial… parfait pour se concentrer.', calm: true };
 const EVENTS = [
-  { icon: '🌧️', name: 'Pluie bienfaisante', desc: 'Tes plantes poussent 2× plus vite.', growMult: 2 },
-  { icon: '🧺', name: 'Marché aux fleurs', desc: 'Toutes les graines sont à -50 %.', priceMult: 0.5 },
+  { icon: '🥚', name: 'Couvaison express', desc: 'Tes œufs couvent 2× plus vite.', eggMult: 2 },
   { icon: '☀️', name: 'Soleil doré', desc: '+50 % de pièces par minute révisée.', coinMult: 1.5 },
-  { icon: '🐝', name: 'Abeilles butineuses', desc: 'Les récoltes rapportent 2× plus.', harvestMult: 2 },
-  { icon: '🌈', name: 'Arc-en-ciel', desc: 'Pièces ×1,5 et croissance ×1,5 !', coinMult: 1.5, growMult: 1.5 },
+  { icon: '💗', name: 'Fête de l\'amitié', desc: 'Tu gagnes 2× plus d\'amitié.', paMult: 2 },
+  { icon: '🌈', name: 'Arc-en-ciel', desc: 'Pièces ×1,5 et couvaison ×1,5 !', coinMult: 1.5, eggMult: 1.5 },
   { icon: '🌙', name: 'Nuit étoilée', desc: 'Les récompenses de missions sont doublées.', missionMult: 2 },
 ];
 
@@ -52,8 +41,6 @@ const MISSION_POOL = [
   { id: 'pomo2',  text: 'Terminer 2 pomodoros',            key: 'pomos',    goal: 2,   reward: 20 },
   { id: 'pomo4',  text: 'Terminer 4 pomodoros',            key: 'pomos',    goal: 4,   reward: 40 },
   { id: 'subj2',  text: 'Réviser 2 matières différentes',  key: 'subjects', goal: 2,   reward: 25 },
-  { id: 'harv1',  text: 'Récolter une plante',             key: 'harvests', goal: 1,   reward: 15 },
-  { id: 'plant2', text: 'Planter 2 graines',               key: 'plants',   goal: 2,   reward: 10 },
 ];
 
 const today = () => new Date().toLocaleDateString('sv'); // AAAA-MM-JJ, heure locale
@@ -66,7 +53,6 @@ function missionsOf(d) { // 3 missions différentes, les mêmes toute la journé
   return out;
 }
 const dayOffset = n => { const x = new Date(); x.setDate(x.getDate() + n); return x.toLocaleDateString('sv'); }; // setDate : juste même aux changements d'heure
-const priceOf = P => Math.ceil(P.price * (eventOf(today()).priceMult || 1));
 const fmt = s => {
   s = Math.max(0, Math.round(s));
   const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, sec = s % 60, p = n => String(n).padStart(2, '0');
@@ -84,7 +70,7 @@ const store = {
 // ---------- Sauvegarde ----------
 const DEFAULT = {
   version: 1, // à incrémenter avec une migration quand la forme des données change
-  coins: 15, inv: { marguerite: 1 }, plots: Array(9).fill(null),
+  coins: 15,
   subjects: [{ id: 1, name: 'Maths', color: '#FF8FE6', min: 0 }],
   carry: 0, totalMin: 0, cfg: { preset: 'classique', work: 25, short: 5, long: 15, libre: 45, rounds: 4 }, day: null,
   friend: {}, lastStudy: today(), lastStudyAt: null, decayed: 0, boosts: 0, streak: { cur: 0, best: 0, last: null }, sessions: [], alertVol: 0.5,
@@ -92,7 +78,7 @@ const DEFAULT = {
   species: 'pingouin', pets: ['pingouin'], names: {}, partner: false,
   decor: { owned: ['etagere', 'plante', 'tapisLav'], on: ['etagere', 'plante', 'tapisLav'] },
   night: matchMedia('(prefers-color-scheme: dark)').matches, vol: { lofi: 0, rain: 0, wind: 0, cars: 0, cafe: 0, foret: 0 },
-  eggs: [], hatched: 0, ach: [], freezes: 0, harvested: 0, bought: 0,
+  eggs: [], hatched: 0, ach: [], freezes: 0, bought: 0,
   sounds: ['lofi', 'rain', 'wind', 'cars'], theme: 'lavande', themes: ['lavande'],
   room: 'douce', rooms: ['douce'], season: '', view: 'ciel', views: ['ciel'],
   tx: [], weekGoal: 5, exams: [], todos: [], cards: [], notes: '', font: 1, reviewSeen: null, pos: {},
@@ -108,7 +94,7 @@ const save = () => { // localStorage peut être plein ou indisponible (navigatio
 };
 function dayStats() {
   const d = today();
-  if (!S.day || S.day.date !== d) S.day = { date: d, minutes: 0, pomos: 0, subjects: [], harvests: 0, plants: 0, claimed: [] };
+  if (!S.day || S.day.date !== d) S.day = { date: d, minutes: 0, pomos: 0, subjects: [], claimed: [] };
   S.day.coins ??= 0; S.day.sessions ??= 0;
   return S.day;
 }
@@ -282,7 +268,7 @@ const SPECIES = {
     belly: tummy('#7A2380') + `<path d="${star(82, 158, 6)}" fill="#FFD99A" stroke="none"/><path d="${star(116, 176, 5)}" fill="#FFD99A" stroke="none"/><circle cx="104" cy="148" r="2" fill="#BFF6FF" stroke="none"/><circle cx="88" cy="186" r="2" fill="#BFF6FF" stroke="none"/>`,
     face: '<circle cx="84" cy="104" r="7" fill="#4FE3FF"/><circle cx="116" cy="104" r="7" fill="#4FE3FF"/><circle cx="84" cy="104" r="3.5" fill="#110927"/><circle cx="116" cy="104" r="3.5" fill="#110927"/><path d="M96 113H104L100 118Z" fill="#FF8FE6"/><path d="M100 118Q96 124 91 121M100 118Q104 124 109 121M56 111L74 114M56 121L74 118M144 111L126 114M144 121L126 118" stroke="#D9BDEE" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   sylve: { name: 'Esprit du jardin', dflt: 'Sylve', rarity: 'mythique', body: '#BFF6FF', feet: '#8FF0FF',
-    story: ['Sylve est née de la première graine que tu as plantée.', 'Chaque minute de révision fait pousser une nouvelle feuille sur sa tête.', 'Le jour où ton jardin sera plein, elle fleurira en entier.'],
+    story: ['Sylve est née dans un pot de fleurs oublié sur le rebord de ta fenêtre.', 'Chaque minute de révision fait pousser une nouvelle feuille sur sa tête.', 'Le jour où tu réussiras ton examen, elle fleurira en entier.'],
     back: '<circle cx="30" cy="84" r="7" fill="#FFD99A"/><circle cx="172" cy="66" r="5" fill="#FFD99A"/><circle cx="182" cy="110" r="4" fill="#FFD99A"/>',
     hair: '<path d="M100 58V40" fill="none" stroke-width="3"/><path d="M100 44Q84 30 76 40Q88 50 100 44Z" fill="#a8d89a"/><path d="M100 40Q116 24 126 34Q112 46 100 40Z" fill="#a8d89a"/>',
     belly: tummy('#eafcff') + flowers([[100, 166]]),
@@ -374,9 +360,9 @@ const curStreak = () => S.streak.last && dayNum(today()) - dayNum(S.streak.last)
 // Répliques : au moins 5 par situation, {n} = nom du compagnon, {p} = nom de Perle
 const LINES = {
   hello: ['Bienvenue ! Je suis tellement content de te voir 🌷', 'Coucou ! Prêt·e pour une belle session ? ✨', 'Te voilà ! J\'avais gardé ton livre au chaud 📚',
-    'Bonjour toi ! On fait pousser le jardin aujourd\'hui ? 🌱', 'Bienvenue au jardin ! Installe-toi, je prépare le thé 🍵'],
+    'Bonjour toi ! On fait éclore un œuf aujourd\'hui ? 🥚', 'Bienvenue au jardin ! Installe-toi, je prépare le thé 🍵'],
   idle:['Coucou, c\'est {n} !', 'On révise ensemble ? 📚', 'Tu vas tout déchirer 💪', 'Une petite tisane et on s\'y remet 🍵',
-    'N\'oublie pas d\'arroser le jardin 🌷', 'J\'aime bien quand il pleut dehors 🌧️', 'Chaque minute compte ✨'],
+    'N\'oublie pas de valider ta journée 🔥', 'J\'aime bien quand il pleut dehors 🌧️', 'Chaque minute compte ✨'],
   partner: ['{p} est trop fière de toi 💕', '{p} et moi, on t\'encourage !'],
   start: ['C\'est parti ! Je révise avec toi 📚', 'On se concentre ensemble, tu vas gérer ✨', 'Je sors mon livre aussi, allez !',
     'Un pas après l\'autre, on y va 🌱', 'Respire, installe-toi… et c\'est parti 🍵'],
@@ -393,7 +379,7 @@ const LINES = {
     "L'examen de {e} approche ({quand}) : je crois en toi 🌟", 'Pour {e} ({quand}), on avance pas à pas. Une session ? 🍅',
     "J'ai entouré {e} dans mon calendrier : c'est {quand} ✨"],
   level: ['On devient vraiment proches, toi et moi 💗', 'Nouveau niveau d\'amitié ! Trop d\'émotion 🥹',
-    'Merci de réviser avec moi, ça compte beaucoup 💕', 'Notre amitié grandit comme ton jardin 🌷',
+    'Merci de réviser avec moi, ça compte beaucoup 💕', 'Notre amitié grandit à chaque session 🌷',
     'Je crois que tu es mon meilleur binôme de révision ✨'],
 };
 let bubble = '', bubbleAt = 0;
@@ -465,9 +451,6 @@ const SPR = {
   chaussette: ['kkkkk..', 'kwwwk..', 'kkkkk..', 'kRRRk..', 'kRwRk..', 'kRRRk..', 'kRRRRkk', 'kRwRRRk', 'kRRRRRk', '.kkkkk.'],
   cloche: ['....k....', '...kok...', '..kyyok..', '.kyyyyok.', '.kyyyyok.', '.kyyyyok.', 'kyyyyyyok', 'kkkkkkkkk', '...kok...', '....k....'],
   cookie: ['..kkk..', '.kooKk.', 'kKooook', 'kooKook', 'koooKok', '.kKook.', '..kkk..'],
-  // jardin
-  arbre: ['.....kkkkkkk......', '...kkgggggggkk....', '..kggggggGggggk...', '.kgggGgggggggggk..', '.kggggggggGgggggk.', 'kgggggGgggggggggk.', 'kggGgggggggGggggk.', 'kggggggggggggGgggk', 'kgggggGgggggggggk.', '.kgggggggGggggggk.', '.kkgggggggggggkk..', '...kkggGgggggkk...', '....kkkkvvkkk.....', '.......kvVk.......', '.......kvVk.......', '.......kvVk.......', '......kvvVVk......', '.....kkkkkkkk.....'],
-  buisson: ['...kkk.kkk..', '.kkgggkgggk.', 'kgggGgggGggk', 'kggggggggggk', 'kgGgggggGggk', '.kkkkkkkkkk.'],
 };
 SPR.cadre[1] = SPR.cadre[10] = 'k' + 'o'.repeat(12) + 'k';
 SPR.cadeau2 = SPR.cadeau.map(r => r.replace(/c/g, 'y').replace(/P/g, 'g'));
@@ -598,7 +581,6 @@ const ACH = [
   { id: 'coll12', icon: '💯', name: 'Collection complète', desc: `Réunir les ${COLL.length} compagnons`, val: () => S.pets.length, goal: COLL.length, reward: { cos: 'arcEnCiel' } },
   { id: 'friend5', icon: '💗', name: 'Grands amis', desc: "Atteindre le niveau 5 d'amitié", val: maxLevel, goal: 5, reward: { coins: 80 } },
   { id: 'friend10', icon: '💞', name: 'Amis pour la vie', desc: "Atteindre le niveau 10 d'amitié", val: maxLevel, goal: 10, reward: { egg: 'epique' } },
-  { id: 'harvest', icon: '🌷', name: 'Main verte', desc: 'Récolter 10 plantes', val: () => S.harvested, goal: 10, reward: { coins: 40 } },
   { id: 'shop', icon: '🛍️', name: 'Première emplette', desc: 'Acheter un objet en boutique', val: () => S.bought, goal: 1, reward: { coins: 20 } },
 ];
 const rewardText = r => r.coins ? `${r.coins} 🪙` : r.egg ? EGGS[r.egg].name : r.boost ? `${r.boost} accélérateur d'œuf ⚡` : r.pet ? `Compagnon exclusif : ${SPECIES[r.pet].name}` : `Accessoire : ${COSMETICS[r.cos].name}`;
@@ -917,12 +899,11 @@ function credit(sec, full, subId) { // full : session complète (bonus)
   S.carry -= m * 60;
   const ev = eventOf(today()), d = dayStats(), sub = S.subjects.find(s => s.id == subId);
   const coins = earn(m * (ev.coinMult || 1) + (full ? CFG.coinsFull : 0), full ? 'Session complète' : 'Révision');
-  const pa = addPA(m * CFG.paPerMin);
+  const pa = addPA(m * CFG.paPerMin * (ev.paMult || 1));
   d.sessions++; S.totalMin += m; d.minutes += m;
   S.lastStudy = today(); S.lastStudyAt = Date.now(); S.decayed = 0;
   if (sub) { sub.min += m; if (!d.subjects.includes(sub.id)) d.subjects.push(sub.id); }
-  S.plots.forEach(p => p && (p.g += m * (ev.growMult || 1)));
-  S.eggs.forEach(e => e.min += m);
+  S.eggs.forEach(e => e.min += m * (ev.eggMult || 1));
   if (m) toast(`+${m} min révisées · +${coins} 🪙${pa ? ` · +${pa} 💗` : ''}${d.coins >= CFG.coinsPerDay ? ' (plafond du jour atteint)' : ''}`);
 }
 
@@ -1034,7 +1015,6 @@ function openDebrief() {
 }
 
 // ---------- Affichage ----------
-let selSeed = null;
 const toastQ = [];
 function toast(msg) { // file d'attente : succès, niveaux et gains s'affichent l'un après l'autre
   if (toastQ.at(-1) === msg) return;
@@ -1203,11 +1183,32 @@ function weekReview(byDay) { // texte du compagnon à partir des stats de la sem
 }
 
 // ---------- Outils : à faire, fiches, bloc-notes ----------
-let flash = null, flashShow = false; // fiche en cours de révision
-function nextCard() { // révise d'abord les fiches des petites boîtes, sans répéter la même
-  const others = S.cards.filter(c => c.id !== flash), cand = others.length ? others : S.cards;
-  const min = Math.min(...cand.map(c => c.box)), pool = cand.filter(c => c.box === min);
-  flash = pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null; flashShow = false;
+// Paquet en cours de révision (fenêtre #deckDlg) : ids = ordre des cartes, i = carte affichée,
+// ko = cartes marquées 💔, ok = nombre de ❤️, flip = carte retournée, back = la réponse s'affiche au recto
+let deck = null;
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const subOf = c => S.subjects.some(s => s.id === c.sub) ? c.sub : 0; // matière supprimée : la fiche passe dans « Sans matière »
+const deckCards = sub => S.cards.filter(c => subOf(c) === sub);
+function openDeck(sub, ids = deckCards(sub).map(c => c.id)) {
+  deck = { sub, ids, i: 0, ko: [], ok: 0, flip: false, back: deck?.back || false };
+  renderDeck(); if (!$('#deckDlg').open) $('#deckDlg').showModal();
+}
+function renderDeck() {
+  const d = deck, c = S.cards.find(x => x.id === d.ids[d.i]);
+  const head = `<button class="deck-close" data-deck-stop aria-label="Fermer les fiches">✕</button><h2 id="deckTitle">🃏 ${esc(d.sub ? subName(d.sub) : 'Sans matière')}`;
+  $('#deckBody').innerHTML = !c
+    ? `${head}</h2><p class="deck-end">Paquet terminé ! ❤️ ${d.ok} apprise${d.ok > 1 ? 's' : ''} · 💔 ${d.ko.length} à revoir</p>
+      <div class="row choice">${d.ko.length ? `<button class="btn primary" data-deck-retry>💔 Réviser les cartes non apprises (${d.ko.length})</button>` : ''}
+      <button class="btn" data-deck-stop>M'arrêter là</button></div>`
+    : `${head} <small class="hint">${d.i + 1} / ${d.ids.length}</small></h2>
+      <button class="flipcard" data-deck-flip aria-label="Retourner la carte">
+        <span class="inner"><span class="face front"><small>${d.back ? 'Réponse' : 'Question'}</small>${esc(d.back ? c.a : c.q)}</span>
+        <span class="face back" aria-hidden="true"><small>${d.back ? 'Question' : 'Réponse'}</small>${esc(d.back ? c.q : c.a)}</span></span></button>
+      <div class="deck-row"><button class="heart ko" data-deck-mark="ko" aria-label="Pas encore apprise">💔</button>
+        <span class="hint">Clique sur la carte pour la retourner</span>
+        <button class="heart ok" data-deck-mark="ok" aria-label="Apprise">❤️</button></div>
+      <div class="row choice"><button class="btn" data-deck-shuffle>🔀 Mélanger</button>
+        <button class="btn" data-deck-face>🔄 ${d.back ? 'Question au recto' : 'Réponse au recto'}</button></div>`;
 }
 function renderTools() {
   $('#todoList').innerHTML = S.todos.length ? S.todos.map(t => `<div class="todo ${t.done ? 'done' : ''}">
@@ -1218,12 +1219,11 @@ function renderTools() {
     : '<p class="empty-msg">Rien à faire pour l\'instant.</p>';
   const opts = '<option value="">Sans matière</option>' + S.subjects.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('');
   setOptions($('#cardSub'), opts);
-  if (!S.cards.some(c => c.id === flash)) nextCard();
-  const c = S.cards.find(c => c.id === flash);
-  $('#cardReview').innerHTML = !c ? '<p class="empty-msg">Ajoute ta première fiche : une question d\'un côté, la réponse de l\'autre.</p>'
-    : `<div class="flash"><small>${esc(subName(c.sub))} · boîte ${c.box + 1} / 5</small><p class="q">${esc(c.q)}</p>
-      ${flashShow ? `<p class="a">${esc(c.a)}</p><div class="row choice"><button class="btn" data-flash="ko">🔁 À revoir</button><button class="btn primary" data-flash="ok">✅ Je savais</button></div>`
-        : '<button class="btn wide" data-flash="show">Voir la réponse</button>'}</div>`;
+  const decks = [...S.subjects.map(s => [s.id, s.name, s.color]), [0, 'Sans matière', 'var(--lav-d)']]
+    .map(([id, name, col]) => [id, name, col, deckCards(id).length]).filter(([id, , , n]) => id || n);
+  $('#deckList').innerHTML = S.cards.length ? decks.map(([id, name, col, n]) =>
+    `<button class="deck-btn" data-deck="${id}" style="--c:${col}" ${n ? '' : 'disabled'}><b>${esc(name)}</b><small>${n} carte${n > 1 ? 's' : ''}</small></button>`).join('')
+    : '<p class="empty-msg">Ajoute ta première fiche : une question d\'un côté, la réponse de l\'autre.</p>';
   $('#cardCount').textContent = `Mes fiches (${S.cards.length})`;
   $('#cardList').innerHTML = S.cards.map(c => `<div class="subject"><span class="name">${esc(c.q)}<br><small>${esc(c.a)}</small></span>
     <button class="del" data-card-del="${c.id}" aria-label="Supprimer la fiche : ${esc(c.q)}">🗑️</button></div>`).join('');
@@ -1262,7 +1262,7 @@ function renderTuto() {
   $('#tutoBody').innerHTML = `<p class="hint">Étape ${tuto.step + 1} / 3</p>` + [
     `<h2 id="tutoTitle">🌷 Bienvenue au Jardin d'Étude</h2>
       <p>Ici, tu révises avec un minuteur et un petit compagnon qui t'encourage.</p>
-      <p>⏱️ Chaque minute de révision rapporte des pièces 🪙, fait pousser ton jardin et renforce votre amitié 💗.</p>
+      <p>⏱️ Chaque minute de révision rapporte des pièces 🪙, fait couver tes œufs 🥚 et renforce votre amitié 💗.</p>
       <p>💗 10 min de révision = 10 % d'un niveau d'amitié. Mais attention : après ${CFG.decayHours} h sans réviser, ton compagnon perd ${CFG.decayRate * 100} % de son amitié.</p>
       <p>🔥 Coche « Je suis là » chaque jour pour faire grandir ta série et gagner des cadeaux.</p>`,
     `<h2 id="tutoTitle">🐾 Choisis ton premier compagnon</h2>
@@ -1281,43 +1281,10 @@ function finishTuto() {
   $('#tuto').close(); say('idle'); save(); renderAll();
 }
 
-// emplacements des 9 massifs dans la scène : [x %, bas %] (rangée du fond -> devant)
-const SPOTS = [[15, 55], [34, 53], [53, 55], [10, 71], [30, 70], [50, 72], [8, 90], [28, 89], [47, 91]];
-const GARDEN_DECOR = `${VIEWS.ciel.html()}<span class="hill h1"></span><span class="hill h2"></span>
-  <span class="fence"></span><span class="gate"></span><span class="lawn"></span>
-  <svg class="path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M56 100C62 82 80 66 77 47L83 47C88 66 80 84 78 100Z"/></svg>
-  <span class="tree">${pix('arbre', 5)}</span><span class="bush">${pix('buisson', 4)}</span>
-  <span class="fly f1">${pix('papillon', 2)}</span><span class="fly f2">${pix('papillon', 2, 'Pp')}</span>
-  ${Array.from({ length: 8 }, (_, i) => `<i class="firefly" style="left:${8 + i * 12}%;top:${50 + (i * 17) % 40}%;animation-delay:-${i * 0.9}s"></i>`).join('')}`;
-
-function renderGarden() {
-  const ev = eventOf(today());
-  if (selSeed && !S.inv[selSeed]) selSeed = null;
-  $('#gardenHint').textContent = selSeed
-    ? `Clique sur un coin de terre vide pour planter : ${PLANTS[selSeed].name}`
-    : 'Choisis une graine dans ton sac, puis clique sur un coin de terre. Les plantes prêtes ✨ se récoltent d\'un clic.';
-  $('#plots').innerHTML = GARDEN_DECOR + S.plots.map((p, i) => {
-    const [x, y] = SPOTS[i % SPOTS.length], pos = `style="--x:${x}%;--y:${y}%;--s:${(0.6 + (y - 53) / 38 * 0.4).toFixed(2)};z-index:${2 + Math.floor(i / 3)}"`;
-    if (!p) return `<button class="spot empty ${selSeed ? 'can' : ''}" data-plot="${i}" ${pos} aria-label="Coin de terre vide">${selSeed ? '<span class="plant">＋</span>' : ''}</button>`;
-    const P = PLANTS[p.type], r = Math.min(1, p.g / P.grow);
-    return `<button class="spot ${r >= 1 ? 'ready' : ''}" data-plot="${i}" ${pos} title="${P.name}" aria-label="${P.name}, ${Math.round(r * 100)} %">
-      <span class="plant">${P.stages[r >= 1 ? 2 : r >= 0.4 ? 1 : 0]}</span><span class="bar"><i style="width:${r * 100}%"></i></span></button>`;
-  }).join('');
-  const inv = Object.entries(S.inv).filter(([, n]) => n > 0);
-  $('#inv').innerHTML = inv.length
-    ? inv.map(([k, n]) => `<button class="seed ${selSeed === k ? 'selected' : ''}" data-seed="${k}">
-        <span class="emoji">${PLANTS[k].stages[2]}</span><b>${PLANTS[k].name}</b><small>× ${n}</small></button>`).join('')
-    : '<p class="empty-msg">Ton sac est vide, achète des graines à la boutique !</p>';
-  $('#shop').innerHTML = Object.entries(PLANTS).map(([k, P]) => `<div class="seed">
-      <span class="emoji">${P.stages[2]}</span><b>${P.name}</b>
-      <small>${P.grow} min de révision<br>Récolte : ${Math.round(P.reward * (ev.harvestMult || 1))} 🪙</small>
-      <button class="btn primary" data-buy="${k}" ${S.coins < priceOf(P) ? 'disabled' : ''}>${priceOf(P)} 🪙</button></div>`).join('');
-}
-
 function renderMissions() {
-  const d = dayStats(), ev = eventOf(today()), tomorrow = eventOf(dayOffset(1));
+  const d = dayStats(), ev = eventOf(today());
   $('#eventCard').innerHTML = `<p class="event-big">${ev.icon} ${ev.name}</p><p>${ev.desc}</p>
-    <p class="hint">Demain : ${tomorrow.icon} ${tomorrow.name}</p>`;
+    <p class="hint">Un événement par mois, du 1er au ${CFG.eventDays}.</p>`;
   $('#missionList').innerHTML = missionsOf(d.date).map(m => {
     const val = m.key === 'subjects' ? d.subjects.length : d[m.key];
     const done = val >= m.goal, claimed = d.claimed.includes(m.id);
@@ -1523,7 +1490,7 @@ function hatch(i) { // tire une rareté, puis un compagnon pas encore possédé
   }, 1600);
 }
 
-function renderAll() { checkAch(); renderHeader(); renderStudy(); renderCompanions(); renderShop(); renderGarden(); renderMissions(); renderSubjects(); renderStats(); renderAch(); renderTools(); renderSettings(); renderFriend(); renderTimer(); }
+function renderAll() { checkAch(); renderHeader(); renderStudy(); renderCompanions(); renderShop(); renderMissions(); renderSubjects(); renderStats(); renderAch(); renderTools(); renderSettings(); renderFriend(); renderTimer(); }
 
 // ---------- Actions ----------
 document.addEventListener('click', e => {
@@ -1582,12 +1549,21 @@ document.addEventListener('click', e => {
     $('#goalInput').value = S.todos.find(t => t.id == ds.todoGoal).text;
     $('[data-tab=study]').click(); toast('🎯 Objectif prêt, il ne reste qu\'à démarrer !');
   }
-  if (ds.flash) {
-    const c = S.cards.find(c => c.id === flash);
-    if (ds.flash === 'show') flashShow = true;
-    else { c.box = ds.flash === 'ok' ? Math.min(c.box + 1, 4) : 0; nextCard(); save(); }
-    renderTools();
+  if ('deck' in ds) openDeck(+ds.deck);
+  if ('deckFlip' in ds) { // on bascule la classe sans tout redessiner, pour garder l'animation
+    deck.flip = !deck.flip; b.classList.toggle('flipped', deck.flip);
+    b.querySelector('.front').setAttribute('aria-hidden', deck.flip); b.querySelector('.back').setAttribute('aria-hidden', !deck.flip);
   }
+  if (ds.deckMark) {
+    const c = S.cards.find(x => x.id === deck.ids[deck.i]);
+    c.box = ds.deckMark === 'ok' ? Math.min(c.box + 1, 4) : 0; // boîtes de Leitner, gardées pour plus tard
+    if (ds.deckMark === 'ok') deck.ok++; else deck.ko.push(c.id);
+    deck.i++; deck.flip = false; save(); renderDeck();
+  }
+  if ('deckShuffle' in ds) { deck.ids = [...deck.ids.slice(0, deck.i), ...shuffle(deck.ids.slice(deck.i))]; deck.flip = false; renderDeck(); toast('🔀 Cartes mélangées'); }
+  if ('deckFace' in ds) { deck.back = !deck.back; deck.flip = false; renderDeck(); }
+  if ('deckRetry' in ds) openDeck(deck.sub, deck.ko);
+  if ('deckStop' in ds) $('#deckDlg').close();
   if (ds.cardDel) { S.cards = S.cards.filter(c => c.id != ds.cardDel); save(); renderTools(); }
   if (b.id === 'exportBtn') exportSave();
   if (b.id === 'importBtn') $('#importFile').click();
@@ -1658,28 +1634,6 @@ document.addEventListener('click', e => {
     S.decor.on.push(id); save(); renderAll();
   }
 
-  if (ds.seed) { selSeed = selSeed === ds.seed ? null : ds.seed; renderGarden(); }
-  if (ds.buy) {
-    const price = priceOf(PLANTS[ds.buy]);
-    if (S.coins < price) return;
-    addCoins(-price, `Graine : ${PLANTS[ds.buy].name}`); S.inv[ds.buy] = (S.inv[ds.buy] || 0) + 1;
-    toast(`Graine de ${PLANTS[ds.buy].name} achetée !`); save(); renderAll();
-  }
-  if (ds.plot) {
-    const i = +ds.plot, p = S.plots[i];
-    if (!p) {
-      if (!selSeed) return toast('Choisis d\'abord une graine dans ton sac 🌱');
-      S.plots[i] = { type: selSeed, g: 0 }; S.inv[selSeed]--; dayStats().plants++;
-      toast(`${PLANTS[selSeed].name} plantée ! Révise pour la faire pousser.`);
-    } else {
-      const P = PLANTS[p.type];
-      if (p.g < P.grow) return toast(`${P.name} : encore ${Math.ceil((P.grow - p.g) / (eventOf(today()).growMult || 1))} min de révision`);
-      const gain = Math.round(P.reward * (eventOf(today()).harvestMult || 1));
-      addCoins(gain, `Récolte : ${P.name}`); S.plots[i] = null; dayStats().harvests++; S.harvested++;
-      toast(`${P.stages[2]} Récolte : +${gain} 🪙`);
-    }
-    save(); renderAll();
-  }
   if (ds.claim) {
     const d = dayStats(), m = MISSION_POOL.find(x => x.id === ds.claim);
     if (d.claimed.includes(m.id)) return;
@@ -1723,6 +1677,7 @@ $('#cardForm').addEventListener('submit', e => {
 let notesTimer;
 $$('#notes, #notesQuick').forEach(t => t.addEventListener('input', e => { S.notes = e.target.value; clearTimeout(notesTimer); notesTimer = setTimeout(save, 400); }));
 $('#notesDlg').addEventListener('close', () => { $('#notes').value = S.notes; });
+$('#deckDlg').addEventListener('close', () => { deck = null; renderTools(); }); // ✕, « M'arrêter là » ou Échap
 
 // ---------- Bloc-notes déplaçable : on l'attrape n'importe où sur son cadre (position sauvegardée) ----------
 if (!S.pos || typeof S.pos !== 'object') S.pos = {};
@@ -1820,6 +1775,7 @@ console.assert(Object.keys(EGGS).every(r => RARITY[r]) && Object.values(STREAK_R
 console.assert(COLL.length === 25 && ACH.length >= 20 && new Set(ACH.map(a => a.id)).size === ACH.length, 'collection et succès');
 console.assert(Object.values(EGGS).every(E => Math.abs(Object.values(E.odds).reduce((a, b) => a + b) - 1) < 1e-9), 'probabilités des œufs');
 console.assert(Object.values(DECOR).every(d => d.rug || SPR[d.icon]) && Object.values(SPR).every(r => r.join('').split('').every(ch => ch === '.' || PXC[ch])), 'dessins de la déco');
+console.assert(shuffle([1, 2, 3, 4, 5]).sort().join() === '1,2,3,4,5' && shuffle([]).length === 0, 'shuffle garde les cartes');
 console.assert(fmtMin(59) === '59 min' && fmtMin(125) === '2 h 05', 'fmtMin');
 
 // ids inconnus (sauvegarde importée ou ancienne) : on les retire plutôt que de planter
@@ -1830,7 +1786,8 @@ for (const eq of [S.equip, S.partnerEquip]) for (const k in eq) if (eq[k] && !CO
 if (!(S.season in SEASONS)) S.season = '';
 S.decor.owned = S.decor.owned.filter(id => DECOR[id]); S.decor.on = S.decor.on.filter(id => DECOR[id]);
 S.eggs = S.eggs.filter(e => EGGS[e?.type]); S.sounds = S.sounds.filter(k => AMBIANCES[k]);
-S.plots = S.plots.map(p => p && PLANTS[p.type] ? p : null);
+delete S.plots; delete S.inv; delete S.harvested; // l'ancien jardin a été retiré
+S.ach = S.ach.filter(id => ACH.some(a => a.id === id)); // succès retirés (ex. « Main verte » du jardin)
 if (!THEMES[S.theme]) S.theme = 'lavande';
 // anciennes couleurs pastel des matières -> palette de la ville
 const OLD_PAL = ['#f29bb5', '#93d0b4', '#bba9ea', '#f6c177', '#8fb6ec', '#f5a888'];
