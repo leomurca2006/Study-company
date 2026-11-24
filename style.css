@@ -173,13 +173,12 @@ body.night .cloud { opacity: .2; }
 }
 /* l'aperçu de la boutique (#decoScene) est une copie réduite de la chambre de l'onglet Réviser (voir fitScene) */
 :is(#scene, #decoScene) { height: calc(var(--H, 400px) * var(--z, 1)); }
-:is(#scene, #decoScene) .room { font-size: calc(16px * 2.2); } /* dessins 2,2 fois plus grands dans la chambre */
+:is(#scene, #decoScene) .room { font-size: var(--fs, 35.2px); } /* taille des dessins : 2,2 × 16 px pour une chambre de 900 de large, proportionnelle en dessous (fitScene) */
 /* compagnons et tapis en em, comme la déco : tout garde les mêmes proportions quelle que soit la taille de l'écran */
 :is(#scene, #decoScene) .pet { width: min(6.25em, 36%); } :is(#scene, #decoScene) .pet.partner { width: min(4.55em, 27%); }
 :is(#scene, #decoScene) .rug { width: min(9.1em, 50%); height: 1.6em; } :is(#scene, #decoScene).has-partner .rug { width: min(13em, 72%); }
 :is(#scene, #decoScene).has-partner { --px: 42%; } /* deux compagnons : un peu plus proches et plus petits pour laisser la déco visible */
 :is(#scene, #decoScene).has-partner .pet { width: min(5.4em, 34%); } :is(#scene, #decoScene).has-partner .pet.partner { left: 61%; width: min(4em, 25%); }
-@media (max-width: 700px) { #scene .room { font-size: calc(16px * 1.2); } }
 .scene { --px: 50%; }
 .scene.has-partner { --px: 40%; }
 .d { position: absolute; }
@@ -207,12 +206,20 @@ body.night .cloud { opacity: .2; }
 .book { display: none; }
 .pet[data-state=studying] .book { display: inline; }
 /* états du compagnon : repos (idle), révise, pause, content, endormi, triste doux */
-.pet[data-state=resting] svg { animation: sway 1.4s ease-in-out infinite; }
+.pet[data-state=resting] svg { animation: stretch 3.2s ease-in-out infinite; } /* pendant la pause, il s'étire */
+@keyframes stretch { 0%, 55%, 100% { transform: none; } 70% { transform: scale(.93, 1.08); } 82% { transform: scale(1.05, .95); } }
+/* compagnons en pixels (pixPet) : yeux qui clignent, page du livre qui se tourne pendant le travail */
+.blink { opacity: 0; animation: blink 5s infinite; animation-delay: var(--bd, 0s); }
+@keyframes blink { 0%, 95.9%, 99%, 100% { opacity: 0; } 96%, 98.9% { opacity: 1; } }
+.pet[data-state=sleeping] .blink { animation: none; opacity: 1; } /* il dort : yeux fermés */
+.pf { opacity: 0; animation: flip 4s infinite; }
+.pf + .pf { animation-delay: .2s; } .pf + .pf + .pf { animation-delay: .4s; }
+@keyframes flip { 0%, 79.9%, 85%, 100% { opacity: 0; } 80%, 84.9% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .blink, .pf { animation: none; } }
 .pet[data-state=happy] svg { animation: hop .55s ease-in-out infinite; }
 .pet[data-state=sleeping] svg { animation-duration: 6s; filter: brightness(.9); }
 .pet[data-state=sleeping]::after { content: "💤"; position: absolute; top: 0; right: 4%; font-size: 1.4rem; animation: floaty 2.5s ease-in-out infinite; }
 .pet[data-state=sad] svg { filter: saturate(.6); transform: translateY(6px) scale(.97); animation: none; }
-@keyframes sway { 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
 @keyframes hop { 50% { transform: translateY(-14px); } }
 /* animations débloquées par l'amitié (au clic sur le compagnon) */
 .pet.anim-calin svg { animation: hug .6s ease-in-out 2; }
@@ -426,9 +433,10 @@ body.night .deck-btn:not(:disabled):hover { box-shadow: 0 0 10px rgba(79, 227, 2
 .flipcard { display: block; width: 100%; height: 240px; perspective: 1000px; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 .flipcard .inner { position: relative; display: block; height: 100%; transition: transform .5s; transform-style: preserve-3d; }
 .flipcard.flipped .inner { transform: rotateY(180deg); }
+#importCardsBtn { margin-top: .6rem; }
 .flipcard .face {
-  position: absolute; inset: 0; display: grid; place-content: center; gap: .6rem; padding: 1.2rem; border-radius: 20px;
-  border: 2px solid var(--line); backface-visibility: hidden; font-size: 1.25rem; font-weight: 800; color: var(--btn-ink); overflow-wrap: anywhere;
+  position: absolute; inset: 0; display: grid; place-content: safe center; gap: .6rem; padding: 1.2rem; border-radius: 20px; overflow: auto;
+  border: 2px solid var(--line); backface-visibility: hidden; font-size: 1.25rem; font-weight: 800; color: var(--btn-ink); overflow-wrap: anywhere; white-space: pre-line; /* fiches importées : retours à la ligne, textes longs */
 }
 .flipcard .front { background: #FBE9FF; box-shadow: 0 6px 0 var(--shadow); }
 .flipcard .back { background: #D9F7FF; box-shadow: 0 6px 0 var(--shadow); transform: rotateY(180deg); }

@@ -16,6 +16,8 @@ const CFG = {
   freezeMax: 2, freezePrice: 150, // gels de série
   txMax: 200,           // lignes gardées dans l'historique des pièces
   examSoon: 14,         // jours : le compagnon parle de l'examen à partir de là
+  cardDays: [0, 1, 3, 7, 15], // fiches : jours avant de revoir une carte de la boîte 0 à 4 (répétition espacée)
+  cardImportMax: 2000,  // fiches importées au plus d'un coup (la sauvegarde tient dans le navigateur)
 };
 const LEVELS = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]; // PA cumulés pour atteindre les niveaux 1 à 10 (100 PA = 100 min par niveau)
 // Série = jours d'affilée où le joueur coche « Je suis là » ; récompenses quand la série atteint ces paliers
@@ -247,7 +249,7 @@ const SPECIES = {
     ears: '<circle cx="72" cy="64" r="18" fill="#a8d89a"/><circle cx="128" cy="64" r="18" fill="#a8d89a"/>',
     belly: tummy('#eaf6d8') + '<circle cx="62" cy="88" r="4" fill="#8cc27c" stroke="none"/><circle cx="140" cy="94" r="5" fill="#8cc27c" stroke="none"/>',
     face: '<path d="M80 118Q100 134 120 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
-  panda: { name: 'Panda', dflt: 'Bambou', rarity: 'rare', body: '#fbfaf7', feet: '#2D1A62',
+  panda: { name: 'Panda', dflt: 'Bambou', rarity: 'rare', body: '#fbfaf7', feet: '#8E5BB5', // pieds plus clairs que le contour, sinon on ne les voit pas
     story: ['Bambou mâche lentement : il dit que ça l\'aide à réfléchir.', "Il a appris la calligraphie avec une tige de bambou trempée dans l'encre.", 'Il trouve que tu avances à ton rythme, et que c\'est le meilleur.'],
     ears: '<circle cx="62" cy="68" r="16" fill="#2D1A62"/><circle cx="138" cy="68" r="16" fill="#2D1A62"/>',
     belly: '<ellipse cx="84" cy="105" rx="11" ry="13" transform="rotate(20 84 105)" fill="#2D1A62" stroke="none"/><ellipse cx="116" cy="105" rx="11" ry="13" transform="rotate(-20 116 105)" fill="#2D1A62" stroke="none"/>',
@@ -397,13 +399,14 @@ const MAGIC = '#010203', PET_N = 32, PET_M = 35, PET_SS = 8; // 32 × 35 pixels,
 function petVec(sp, eq, layer, wrap = true) {
   const P = SPECIES[sp], cos = s => eq[s] ? COSMETICS[eq[s]].svg : '', W = PET_N + 2, H = PET_M + 2;
   const g = {
+    // les pieds passent devant le corps : en pixels, derrière, il n'en restait qu'une rangée cachée par le contour
     base: `<g stroke="${MAGIC}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">${P.back || ''}${P.ears || ''}
-      <ellipse cx="78" cy="208" rx="15" ry="6" fill="${P.feet}"/><ellipse cx="122" cy="208" rx="15" ry="6" fill="${P.feet}"/>
       <path d="M46 118Q22 150 40 172Q52 160 56 140Z" fill="${P.body}"/><path d="M154 118Q178 150 160 172Q148 160 144 140Z" fill="${P.body}"/>
       <path d="M100 56C140 56 162 100 162 140C162 186 136 208 100 208C64 208 38 186 38 140C38 100 60 56 100 56Z" fill="${P.body}"/></g>
-      <g stroke="none">${P.belly}</g>${P.face}<g stroke="${MAGIC}" stroke-width="4" stroke-linejoin="round">${eq.tete ? '' : P.hair || ''}</g>`,
+      <g stroke="none">${P.belly}</g><g stroke="${MAGIC}" stroke-width="6"><ellipse cx="76" cy="206" rx="17" ry="8" fill="${P.feet}"/><ellipse cx="124" cy="206" rx="17" ry="8" fill="${P.feet}"/></g>${P.face}<g stroke="${MAGIC}" stroke-width="4" stroke-linejoin="round">${eq.tete ? '' : P.hair || ''}</g>`,
     cos: `<g stroke="${MAGIC}" stroke-width="4" stroke-linejoin="round">${cos('cou')}${cos('yeux')}${cos('tete')}</g>`,
-    book: `<path d="M62 170L100 178L138 170L138 198L100 206L62 198Z" fill="#fff" stroke="${MAGIC}" stroke-width="6" stroke-linejoin="round"/><path d="M100 178V206" stroke="#d6cbee" stroke-width="3"/>`,
+    // livre ouvert : couverture magenta autour des pages, pour qu'il se voie sur tous les ventres clairs
+    book: `<path d="M56 167L100 175L144 167L144 203L100 211L56 203Z" fill="#FF4FD8" stroke="${MAGIC}" stroke-width="6" stroke-linejoin="round"/><path d="M66 172L100 179L134 172L134 197L100 204L66 197Z" fill="#FFF7FE"/><path d="M100 179V204" stroke="#C9A6E4" stroke-width="4"/>`,
   }[layer];
   if (!wrap) return g;
   // une case de marge autour des 200 × 220 du dessin, pour le contour
@@ -464,14 +467,23 @@ async function pixPet(sp, eq) {
     petCells(await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(petVec(sp, eq, l))))));
   const W = PET_N + 2, g = softPx(base, true), set = (i, j, c) => { if (g[j * W + i]) g[j * W + i] = c; };
   const px = X => 1 + Math.floor(X * PET_N / 200), py = Y => 1 + Math.floor(Y * PET_M / 220);
-  const ex = px(84), ey = py(104), kx = px(68), ky = py(122);
+  const ex = px(84), ey = py(104), kx = px(68), ky = py(122), shut = g.map(() => null);
   for (const x0 of [ex - 1, W - 1 - ex]) { // yeux 2 × 2 avec un reflet ; clairs sur une tache foncée (panda, raton)
     const under = g[ey * W + x0], dark = under && luma(under) < 90;
+    for (const a of [0, 1]) { // yeux fermés (clignement, sommeil) : la couleur d'en dessous, puis un trait
+      const k = (ey - 1) * W + x0 + a;
+      if (g[k]) { shut[k] = g[k]; shut[k + W] = dark ? mixHex(under, '#FFFFFF', .45) : LINE; }
+    }
     [[0, -1], [1, -1], [0, 0], [1, 0]].forEach(([a, b]) => set(x0 + a, ey + b, dark ? '#FFF7FE' : LINE));
     if (!dark) set(x0, ey - 1, '#FFF7FE');
   }
   for (const x0 of [kx, W - 2 - kx]) { set(x0, ky, '#FF8FE6'); set(x0 + 1, ky, '#FF8FE6'); } // joues
-  return `<svg viewBox="0 0 ${W} ${PET_M + 2}" shape-rendering="crispEdges" aria-hidden="true">${pxRects(g)}${pxRects(softPx(cos))}<g class="book">${pxRects(softPx(book))}</g></svg>`;
+  const bk = softPx(book), top = Math.floor(bk.findIndex(Boolean) / W), mid = W / 2;
+  // page qui se tourne pendant le travail : 3 images (droite, debout, gauche), montrées l'une après l'autre en CSS
+  const page = (x, h) => { const p = g.map(() => null); for (let y = top - h; y < top; y++) for (const a of [0, 1]) p[y * W + x + a] = y === top - h ? '#C9A6E4' : a ? '#D9BDEE' : '#FFF7FE'; return pxRects(p); }; // côté éclairé, côté ombre, tranche
+  const delay = [...sp + eq.tete + eq.yeux + eq.cou].reduce((s, ch) => s + ch.charCodeAt(0), 0) % 50 / 10; // les compagnons ne clignent pas tous ensemble
+  return `<svg viewBox="0 0 ${W} ${PET_M + 2}" shape-rendering="crispEdges" aria-hidden="true" style="--bd:-${delay}s">${pxRects(g)}<g class="blink">${pxRects(shut)}</g>${pxRects(softPx(cos))}`
+    + `<g class="book">${pxRects(bk)}${top > 3 ? `<g class="pf">${page(mid + 2, 2)}</g><g class="pf">${page(mid - 1, 4)}</g><g class="pf">${page(mid - 4, 2)}</g>` : ''}</g></svg>`;
 }
 // Les compagnons sont dessinés une fois pour toutes (en tâche de fond) : en attendant, une case vide de la même taille.
 const pxPets = {}, pxWait = new Set();
@@ -1433,18 +1445,54 @@ let deck = null;
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const subOf = c => S.subjects.some(s => s.id === c.sub) ? c.sub : 0; // matière supprimée : la fiche passe dans « Sans matière »
 const deckCards = sub => S.cards.filter(c => subOf(c) === sub);
-function openDeck(sub, ids = deckCards(sub).map(c => c.id)) {
-  deck = { sub, ids, i: 0, ko: [], ok: 0, flip: false, back: deck?.back || false };
+// Répétition espacée : due = date où la carte revient (absente = à revoir). Réussie : boîte suivante, revient dans CFG.cardDays[boîte] jours.
+const dateIn = n => new Date((dayNum(today()) + n) * 864e5).toISOString().slice(0, 10); // AAAA-MM-JJ dans n jours
+const isDue = c => !c.due || c.due <= today();
+const cardId = () => Math.max(Date.now(), ...S.cards.map(c => c.id + 1)); // jamais deux fiches avec le même id, même après un import
+// Import : fichier d'Anki (« Notes en texte brut » : en-têtes #separator:, #html:, #… column:) ou CSV/TSV.
+// Une fiche par ligne : question puis réponse ; guillemets à la CSV ("a;b", "" = "), colonnes d'Anki (guid, type, paquet, tags) ignorées.
+function parseCards(text) {
+  let s = text.replace(/^﻿/, ''); const head = {};
+  while (s.startsWith('#')) {
+    const end = s.indexOf('\n'), m = (end < 0 ? s : s.slice(0, end)).trim().match(/^#([^:]+):(.*)$/);
+    if (m) head[m[1].trim().toLowerCase()] = m[2].trim();
+    s = end < 0 ? '' : s.slice(end + 1);
+  }
+  const first = s.split('\n').find(l => l.trim()) || '', named = { tab: '\t', comma: ',', semicolon: ';', pipe: '|', space: ' ', colon: ':' };
+  const sep = named[head.separator] || (head.separator?.length === 1 ? head.separator : first.includes('\t') ? '\t' : first.includes(';') ? ';' : ',');
+  const skip = new Set(['guid', 'notetype', 'deck', 'tags'].map(k => +head[k + ' column'] - 1).filter(n => n >= 0));
+  const html = head.html === 'true' || /<(br|div|p|b|i|span)\b/i.test(s);
+  const rows = []; let row = [], f = '', quoted = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (quoted) { if (ch !== '"') f += ch; else if (s[i + 1] === '"') { f += '"'; i++; } else quoted = false; }
+    else if (ch === '"' && !f) quoted = true;
+    else if (ch === sep) { row.push(f); f = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && s[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += ch;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  const clean = t => (html ? t.replace(/<br\s*\/?>|<\/(div|p)>/gi, '\n').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&') : t).trim();
+  const cards = rows.map(r => r.filter((_, i) => !skip.has(i)).map(clean)).filter(r => r[0] && r[1]).map(([q, a]) => ({ q: q.slice(0, 200), a: a.slice(0, 300) }));
+  const title = /^(question|questions|recto|front|terme|mot)$/i; // ligne de titres d'un tableau
+  return cards.length && title.test(cards[0].q) ? cards.slice(1) : cards;
+}
+function openDeck(sub, ids) { // sans ids : les cartes du jour, ou toutes si le paquet est à jour (révision libre)
+  const all = deckCards(sub), due = all.filter(isDue);
+  deck = { sub, ids: ids || (due.length ? due : all).map(c => c.id), free: !ids && !due.length, i: 0, ko: [], ok: 0, flip: false, back: deck?.back || false };
   renderDeck(); if (!$('#deckDlg').open) $('#deckDlg').showModal();
 }
 function renderDeck() {
   const d = deck, c = S.cards.find(x => x.id === d.ids[d.i]);
   const head = `<button class="deck-close" data-deck-stop aria-label="Fermer les fiches">✕</button><h2 id="deckTitle">🃏 ${esc(d.sub ? subName(d.sub) : 'Sans matière')}`;
+  const next = deckCards(d.sub).map(c => c.due || today()).sort()[0], days = next ? dayNum(next) - dayNum(today()) : 0;
   $('#deckBody').innerHTML = !c
     ? `${head}</h2><p class="deck-end">Paquet terminé ! ❤️ ${d.ok} apprise${d.ok > 1 ? 's' : ''} · 💔 ${d.ko.length} à revoir</p>
+      <p class="hint">Prochaine révision de ce paquet : ${days <= 0 ? "aujourd'hui" : days === 1 ? 'demain' : `dans ${days} jours`}</p>
       <div class="row choice">${d.ko.length ? `<button class="btn primary" data-deck-retry>💔 Réviser les cartes non apprises (${d.ko.length})</button>` : ''}
       <button class="btn" data-deck-stop>M'arrêter là</button></div>`
-    : `${head} <small class="hint">${d.i + 1} / ${d.ids.length}</small></h2>
+    : `${head} <small class="hint">${d.i + 1} / ${d.ids.length}${d.free ? " · révision libre, rien n'est à revoir aujourd'hui" : ''}</small></h2>
       <button class="flipcard" data-deck-flip aria-label="Retourner la carte">
         <span class="inner"><span class="face front"><small>${d.back ? 'Réponse' : 'Question'}</small>${esc(d.back ? c.a : c.q)}</span>
         <span class="face back" aria-hidden="true"><small>${d.back ? 'Question' : 'Réponse'}</small>${esc(d.back ? c.q : c.a)}</span></span></button>
@@ -1466,7 +1514,7 @@ function renderTools() {
   const decks = [...S.subjects.map(s => [s.id, s.name, s.color]), [0, 'Sans matière', 'var(--lav-d)']]
     .map(([id, name, col]) => [id, name, col, deckCards(id).length]).filter(([id, , , n]) => id || n);
   $('#deckList').innerHTML = S.cards.length ? decks.map(([id, name, col, n]) =>
-    `<button class="deck-btn" data-deck="${id}" style="--c:${col}" ${n ? '' : 'disabled'}><b>${esc(name)}</b><small>${n} carte${n > 1 ? 's' : ''}</small></button>`).join('')
+    `<button class="deck-btn" data-deck="${id}" style="--c:${col}" ${n ? '' : 'disabled'}><b>${esc(name)}</b><small>${n} carte${n > 1 ? 's' : ''}${n ? ` · ${(k => k ? `${k} à revoir` : 'à jour ✓')(deckCards(id).filter(isDue).length)}` : ''}</small></button>`).join('')
     : '<p class="empty-msg">Ajoute ta première fiche : une question d\'un côté, la réponse de l\'autre.</p>';
   $('#cardCount').textContent = `Mes fiches (${S.cards.length})`;
   $('#cardList').innerHTML = S.cards.map(c => `<div class="subject"><span class="name">${esc(c.q)}<br><small>${esc(c.a)}</small></span>
@@ -1583,6 +1631,7 @@ function fitScene() {
     const shop = sc.id === 'decoScene', z = shop ? w / 900 : Math.min(2, Math.max(0.75, w / 900));
     const h = shop ? Math.min(Math.max(260, w * 0.72), 520) : Math.max(400, Math.min(innerHeight * 0.75, w * 0.72, 800));
     sc.style.setProperty('--z', z.toFixed(3)); sc.style.setProperty('--H', `${(h / z).toFixed(1)}px`);
+    sc.style.setProperty('--fs', `${(35.2 * Math.min(1, w / z / 900)).toFixed(2)}px`); // chambre plus étroite que 900 : dessins plus petits, mêmes proportions
   }
 }
 
@@ -1806,8 +1855,8 @@ document.addEventListener('click', e => {
   }
   if (ds.deckMark) {
     const c = S.cards.find(x => x.id === deck.ids[deck.i]);
-    c.box = ds.deckMark === 'ok' ? Math.min(c.box + 1, 4) : 0; // boîtes de Leitner, gardées pour plus tard
-    if (ds.deckMark === 'ok') deck.ok++; else deck.ko.push(c.id);
+    if (ds.deckMark === 'ko') { c.box = 0; c.due = today(); deck.ko.push(c.id); } // ratée : elle revient tout de suite
+    else { deck.ok++; if (isDue(c)) { c.box = Math.min(c.box + 1, 4); c.due = dateIn(CFG.cardDays[c.box]); } } // réussie en avance : rien ne change
     deck.i++; deck.flip = false; save(); renderDeck();
   }
   if ('deckShuffle' in ds) { deck.ids = [...deck.ids.slice(0, deck.i), ...shuffle(deck.ids.slice(deck.i))]; deck.flip = false; renderDeck(); toast('🔀 Cartes mélangées'); }
@@ -1820,6 +1869,7 @@ document.addEventListener('click', e => {
   if (b.id === 'logoutBtn') { logout(); toast('Déconnecté. Tes données restent sur cet appareil.'); }
   if (b.id === 'exportBtn') exportSave();
   if (b.id === 'importBtn') $('#importFile').click();
+  if (b.id === 'importCardsBtn') $('#importCards').click();
   if (ds.tutoPick) { tuto.pick = ds.tutoPick; tuto.name = null; renderTuto(); }
   if ('tutoNext' in ds) {
     if (tuto.step === 1) tuto.name = $('#tutoName').value.trim();
@@ -1927,7 +1977,7 @@ $('#todoForm').addEventListener('submit', e => {
 $('#cardForm').addEventListener('submit', e => {
   e.preventDefault();
   const q = $('#cardQ').value.trim(), a = $('#cardA').value.trim(); if (!q || !a) return;
-  S.cards.push({ id: Date.now(), sub: +$('#cardSub').value || null, q, a, box: 0 });
+  S.cards.push({ id: cardId(), sub: +$('#cardSub').value || null, q, a, box: 0 });
   $('#cardQ').value = $('#cardA').value = ''; $('#cardQ').focus(); save(); renderTools();
 });
 let notesTimer;
@@ -1963,6 +2013,16 @@ $('#weekGoal').addEventListener('change', e => {
   renderStats();
 });
 $('#fontSize').addEventListener('change', e => { S.font = +e.target.value; save(); renderHeader(); });
+$('#importCards').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const sub = +$('#cardSub').value || null, key = c => c.q + '\n' + c.a, have = new Set(S.cards.filter(c => c.sub === sub).map(key));
+  let cards = parseCards(await f.text()).filter(c => !have.has(key(c)) && have.add(key(c))); // sans les fiches déjà là
+  if (!cards.length) return toast('🤔 Aucune nouvelle fiche dans ce fichier : il faut une fiche par ligne, la question puis la réponse');
+  const cut = cards.length > CFG.cardImportMax; cards = cards.slice(0, CFG.cardImportMax);
+  const id = cardId(); cards.forEach((c, i) => S.cards.push({ id: id + i, sub, ...c, box: 0 }));
+  save(); renderTools();
+  toast(`📥 ${cards.length} fiche${cards.length > 1 ? 's' : ''} importée${cards.length > 1 ? 's' : ''} dans ${subName(sub)}${cut ? ` (les ${CFG.cardImportMax} premières)` : ''}`);
+});
 $('#importFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) importSave(f); });
 $('#tuto').addEventListener('cancel', e => e.preventDefault()); // le tutoriel se termine par ses boutons
 
@@ -2033,6 +2093,9 @@ console.assert(Object.keys(EGGS).every(r => RARITY[r]) && Object.values(STREAK_R
 console.assert(COLL.length === 25 && ACH.length >= 20 && new Set(ACH.map(a => a.id)).size === ACH.length, 'collection et succès');
 console.assert(Object.values(EGGS).every(E => Math.abs(Object.values(E.odds).reduce((a, b) => a + b) - 1) < 1e-9), 'probabilités des œufs');
 console.assert(Object.values(DECOR).every(d => d.rug || SPR[d.icon]) && Object.values(SPR).every(r => r.join('').split('').every(ch => ch === '.' || PXC[ch])), 'dessins de la déco');
+console.assert(JSON.stringify(parseCards('#separator:tab\n#html:true\n#tags column:3\nQ1\tR<br>1\ttag\n"a;b"\tc &amp; d\n')) === JSON.stringify([{ q: 'Q1', a: 'R\n1' }, { q: 'a;b', a: 'c & d' }])
+  && JSON.stringify(parseCards('Question;Réponse\r\n"x ""y""";z\r\nseule\n')) === JSON.stringify([{ q: 'x "y"', a: 'z' }])
+  && dateIn(0) === today() && dayNum(dateIn(15)) - dayNum(today()) === 15, 'import des fiches et dates');
 console.assert(Object.keys(ROOM_PX).every(k => ROOMS[k]) && mixHex('#000000', '#FFFFFF', .5) === '#808080' && luma('#FFFFFF') > 254, 'chambres en pixel art et couleurs');
 console.assert(shuffle([1, 2, 3, 4, 5]).sort().join() === '1,2,3,4,5' && shuffle([]).length === 0, 'shuffle garde les cartes');
 console.assert(fmtMin(59) === '59 min' && fmtMin(125) === '2 h 05', 'fmtMin');

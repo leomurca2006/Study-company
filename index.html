@@ -230,7 +230,7 @@
     </div>
     <div class="card">
       <h2>🃏 Fiches de révision</h2>
-      <p class="hint">Choisis une matière pour réviser ses fiches.</p>
+      <p class="hint">Choisis une matière : tu révises les cartes du jour. Une carte réussie revient de plus en plus tard (1, 3, 7 puis 15 jours), une carte ratée revient tout de suite.</p>
       <div id="deckList" class="deck-list"></div>
       <form id="cardForm" class="stack">
         <select id="cardSub" aria-label="Matière de la fiche"></select>
@@ -238,6 +238,9 @@
         <input id="cardA" maxlength="300" placeholder="Réponse" required aria-label="Réponse">
         <button class="btn primary">Ajouter la fiche</button>
       </form>
+      <button type="button" class="btn" id="importCardsBtn">📥 Importer des fiches</button>
+      <input type="file" id="importCards" accept=".txt,.csv,.tsv,text/plain,text/csv" hidden>
+      <p class="hint">Fichier d'Anki (Parcourir › Exporter › « Notes en texte brut ») ou tableau en CSV : une fiche par ligne, la question puis la réponse. Les fiches vont dans la matière choisie au-dessus.</p>
       <details><summary id="cardCount"></summary><div id="cardList"></div></details>
     </div>
     <div class="card">
