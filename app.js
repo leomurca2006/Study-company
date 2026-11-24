@@ -501,7 +501,7 @@ function petSVG(sp, eq = {}) {
   return `<svg data-pk="${esc(key)}" viewBox="0 0 ${PET_N + 2} ${PET_M + 2}" aria-hidden="true"></svg>`;
 }
 const petsHTML = (sp = S.species, partner = S.partner, eqMain = S.equip, eqPartner = S.partnerEquip) => `<button class="pet main" data-talk aria-label="Parler à ${esc(nameOf(sp))}">${petSVG(sp, eqMain)}</button>` +
-  (partner ? `<div class="pet partner">${petSVG('pingouine', eqPartner)}</div><span class="love" aria-hidden="true">💕</span>` : '');
+  (partner ? `<div class="pet partner">${petSVG('pingouine', eqPartner)}</div><span class="love" aria-hidden="true"></span>` : '');
 
 // ---------- Amitié (points d'amitié = PA, par compagnon) ----------
 const absentDays = () => dayNum(today()) - dayNum(S.lastStudy);
@@ -630,6 +630,10 @@ SPR.soleil = ['...oooo...', '.ooyyyyoo.', '.oyywyyyo.', 'oyywyyyyyo', 'oyyyyyyyy
 SPR.croissant = ['...wwww...', '.wwlll....', '.wll......', 'wll.......', 'wll.......', 'wll.......', 'wll.......', '.wll......', '.wwlll....', '...wwww...'];
 SPR.nuage = ['.....wwww.......', '...wwwwwwww.ww..', '..wwwwwwwwwwwwww', '.wwwwwwwwwwwwwww', 'wwwwwwwwwwwwwwww', '.llllllllllllll.'];
 SPR.perle = ['.k.', 'kkk', 'PPP', 'PwP', 'PPP', '.P.']; // ampoule de la guirlande
+// petites émotions au-dessus des compagnons (en CSS : --px-coeur, --px-zed, --px-etoile)
+SPR.coeurMini = ['.kk.kk.', 'kPPkPPk', 'kPwPPPk', 'kPPPPPk', '.kPPPk.', '..kPk..', '...k...'];
+SPR.zed = ['CCCCCCC', 'CCCCCCC', '....CC.', '...CC..', '..CC...', '.CC....', 'CCCCCCC', 'CCCCCCC']; // Z épais en cyan néon, lisible le jour comme la nuit
+SPR.etoile = ['..k..', '.kyk.', 'kyyyk', '.kyk.', '..k..'];
 SPR.nuageOrage =SPR.nuage.map(r => r.replace(/w/g, 'u').replace(/l/g, 'K'));
 const pxCache = {};
 function pix(name, k = 3, swap = '') { // swap = 'ab' : la couleur a devient b (ex. fanions, chaussettes)
@@ -870,8 +874,11 @@ const FLAT_PX = {
     wall: pxTile(16, 16, (x, y) => x === 3 && y === 3 || x === 11 && y === 11 ? '#FFF7FE' : x === 12 && y === 4 ? '#BFF6FF' : '#D9F7FF'),
     floor: boards(6, '#C9A6E4', '#8E5BB5') },
 };
+// un dessin de SPR en image CSS (pour les ::before / ::after, qui ne peuvent pas contenir de SVG)
+const pxImg = name => `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(pix(name, 1).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '))}")`;
 function roomCSS() { // une feuille de style générée : jour, puis nuit (body.night, plus précis)
-  let css = Object.entries(FLAT_PX).map(([sel, r]) => `${sel} .wall { background: ${r.wall}; } ${sel} .floor { background: ${r.floor}; box-shadow: none; }\n`).join('');
+  let css = `:root { --px-coeur: ${pxImg('coeurMini')}; --px-zed: ${pxImg('zed')}; --px-etoile: ${pxImg('etoile')}; }
+` + Object.entries(FLAT_PX).map(([sel, r]) => `${sel} .wall { background: ${r.wall}; } ${sel} .floor { background: ${r.floor}; box-shadow: none; }\n`).join('');
   for (const [id, f] of Object.entries(ROOM_PX)) for (const n of [false, true]) {
     const r = f(n), sel = `${n ? 'body.night ' : ''}[data-chambre=${id}]`;
     css += `${sel} .wall { background: ${r.wall}; } ${sel} .floor { background: linear-gradient(${r.plinthe} 0 0) 0 0 / 100% ${2 * PX_EM}em no-repeat, ${r.floor}; box-shadow: ${r.glow ? `0 -2px 12px ${r.glow}` : 'none'}; } ${r.extra ? r.extra(sel) : ''}\n`;

@@ -201,7 +201,11 @@ body.night .cloud { opacity: .2; }
 .pet svg { display: block; width: 100%; animation: breathe 3.5s ease-in-out infinite; transform-origin: bottom center; }
 .pet.partner svg { animation-delay: -1.2s; }
 @keyframes breathe { 50% { transform: scale(1.03, .97); } }
-.love { position: absolute; left: 53%; bottom: 150px; font-size: 1.3rem; animation: floaty 2.5s ease-in-out infinite; }
+/* émotions en pixels (images --px-… générées par roomCSS) : rien à sélectionner, rien à cliquer */
+.love, .pet::before, .pet::after { image-rendering: pixelated; pointer-events: none; user-select: none; }
+.love { position: absolute; left: 53%; bottom: 150px; width: 48px; height: 40px; animation: love 2.4s ease-in-out infinite;
+  background: var(--px-coeur) 0 100% / 28px no-repeat, var(--px-coeur) 100% 0 / 20px no-repeat; } /* deux cœurs, un grand et un petit */
+@keyframes love { 0%, 100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-6px) scale(1.12); } 55% { transform: translateY(-8px) scale(1); } }
 @keyframes floaty { 50% { transform: translateY(-8px); } }
 .book { display: none; }
 .pet[data-state=studying] .book { display: inline; }
@@ -218,15 +222,18 @@ body.night .cloud { opacity: .2; }
 @media (prefers-reduced-motion: reduce) { .blink, .pf { animation: none; } }
 .pet[data-state=happy] svg { animation: hop .55s ease-in-out infinite; }
 .pet[data-state=sleeping] svg { animation-duration: 6s; filter: brightness(.9); }
-.pet[data-state=sleeping]::after { content: "💤"; position: absolute; top: 0; right: 4%; font-size: 1.4rem; animation: floaty 2.5s ease-in-out infinite; }
+.pet[data-state=sleeping]::after { content: ""; position: absolute; top: -40px; right: -20px; width: 92px; height: 82px; animation: zzz 2.6s ease-in infinite;
+  background: var(--px-zed) 0 100% / 40px no-repeat, var(--px-zed) 58% 52% / 30px no-repeat, var(--px-zed) 100% 0 / 21px no-repeat; } /* trois Z qui montent */
+@keyframes zzz { 0% { transform: translate(-4px, 8px) scale(.7); opacity: 0; } 25% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translate(8px, -14px) scale(1.1); opacity: 0; } }
 .pet[data-state=sad] svg { filter: saturate(.6); transform: translateY(6px) scale(.97); animation: none; }
 @keyframes hop { 50% { transform: translateY(-14px); } }
 /* animations débloquées par l'amitié (au clic sur le compagnon) */
 .pet.anim-calin svg { animation: hug .6s ease-in-out 2; }
-.pet.anim-calin::before { content: "💗"; position: absolute; top: -10px; left: 50%; font-size: 1.6rem; animation: floaty 1.2s; }
+.pet.anim-calin::before { content: ""; position: absolute; top: -22px; left: calc(50% - 20px); width: 40px; height: 40px; background: var(--px-coeur) center / contain no-repeat; animation: floaty 1.2s; }
 .pet.anim-danse svg { animation: dance 1.2s ease-in-out; }
 .pet.anim-etoiles svg { animation: hop .4s 3; }
-.pet.anim-etoiles::before { content: "✨🌟✨"; position: absolute; top: -14px; left: 0; right: 0; font-size: 1.3rem; animation: floaty 1.2s; }
+.pet.anim-etoiles::before { content: ""; position: absolute; top: -26px; left: 6%; right: 6%; height: 36px; animation: floaty 1.2s;
+  background: var(--px-etoile) 0 60% / 22px no-repeat, var(--px-etoile) 50% 0 / 32px no-repeat, var(--px-etoile) 100% 60% / 22px no-repeat; }
 @keyframes hug { 50% { transform: scale(1.12, .9); } }
 @keyframes dance { 25% { transform: rotate(-12deg) translateY(-8px); } 50% { transform: none; } 75% { transform: rotate(12deg) translateY(-8px); } }
 .bubble {
