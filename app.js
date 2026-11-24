@@ -617,7 +617,8 @@ SPR.cadeau2 = SPR.cadeau.map(r => r.replace(/c/g, 'y').replace(/P/g, 'g'));
 SPR.soleil = ['...oooo...', '.ooyyyyoo.', '.oyywyyyo.', 'oyywyyyyyo', 'oyyyyyyyyo', 'oyyyyyyyyo', 'oyyyyyyyyo', '.oyyyyyyo.', '.ooyyyyoo.', '...oooo...'];
 SPR.croissant = ['...wwww...', '.wwlll....', '.wll......', 'wll.......', 'wll.......', 'wll.......', 'wll.......', '.wll......', '.wwlll....', '...wwww...'];
 SPR.nuage = ['.....wwww.......', '...wwwwwwww.ww..', '..wwwwwwwwwwwwww', '.wwwwwwwwwwwwwww', 'wwwwwwwwwwwwwwww', '.llllllllllllll.'];
-SPR.nuageOrage = SPR.nuage.map(r => r.replace(/w/g, 'u').replace(/l/g, 'K'));
+SPR.perle = ['.k.', 'kkk', 'PPP', 'PwP', 'PPP', '.P.']; // ampoule de la guirlande
+SPR.nuageOrage =SPR.nuage.map(r => r.replace(/w/g, 'u').replace(/l/g, 'K'));
 const pxCache = {};
 function pix(name, k = 3, swap = '') { // swap = 'ab' : la couleur a devient b (ex. fanions, chaussettes)
   const key = `${name}|${k}|${swap}`;
@@ -670,8 +671,8 @@ const DECOR = {
   cadre:       { name: 'Cadre', icon: 'cadre', price: 140, html: sp('cadre', 'right:6%;top:30%') },
   nounours:    { name: 'Nounours', icon: 'nounours', price: 150, html: sp('nounours', 'left:24%;bottom:22px') },
   horloge:     { name: 'Horloge', icon: 'horloge', price: 180, html: sp('horloge', 'left:8%;top:29%') },
-  guirlande:   { name: 'Guirlande lumineuse', icon: 'ampoule', price: 220, html: '<div class="d garland"></div>' },
-  aquarium:    { name: 'Bocal à poisson', icon: 'bocal', price: 260, html: sp('bocal', 'right:28%;bottom:20px', 3, 'lit fish') },
+  guirlande:   { name: 'Guirlande lumineuse', icon: 'ampoule', price: 220, html: `<div class="d garland">${Array.from({ length: 10 }, (_, i) => pix('perle', 2, i % 2 ? 'Po' : '')).join('')}</div>` },
+  aquarium:    { name: 'Bocal à poisson', icon: 'bocal', price: 260, html: `<div class="d ledge">${lit(pix('bocal'), 'fish')}</div>` }, // sur une tablette au mur : au sol, il cachait Perle ; sur le rebord, la bulle
   rideaux:     { name: 'Rideaux roses', icon: 'rideau', price: 300, html: '<div class="d curtain l"></div><div class="d curtain r"></div>' },
   poster:      { name: 'Poster lune', icon: 'lune', price: 130, html: `<span class="d poster">${pix('lune')}</span>` },
   lampe:       { name: 'Lanterne', icon: 'lanterne', price: 160, html: `<span class="d hang" style="right:auto;left:16%">${lit(pix('lanterne'), 'lantern')}</span>` },
@@ -887,10 +888,12 @@ function roomHTML(trying, eqMain = S.equip, eqPartner = S.partnerEquip, view = S
   let on = Object.keys(DECOR).filter(id => S.decor.on.includes(id) && (!DECOR[id].season || DECOR[id].season === season));
   if (trying && !on.includes(trying)) on = [...on.filter(id => !(DECOR[trying].rug && DECOR[id].rug)), trying];
   const rug = on.map(id => DECOR[id].rug).find(Boolean);
-  return `<div class="wall"></div><div class="floor"></div>
+  // le tapis est posé sur le sol, sous tout le reste ; les objets posés au sol (placés avec bottom:) sont plus près de nous
+  // que les compagnons, donc dessinés devant eux : un compagnon ne cache jamais le nounours ou le bocal
+  const floor = id => /bottom:/.test(DECOR[id].html), deco = list => list.map(id => DECOR[id].html || '').join('');
+  return `<div class="wall"></div><div class="floor"></div>${rug ? `<div class="rug" style="${rugBg(rug)}"></div>` : ''}
     <div class="window">${VIEWS[view].html()}<div class="rain"${view === 'orage' ? ' style="--rain:.9"' : ''}></div><div class="frame"></div></div>${SEASONS[season].base}
-    ${on.map(id => DECOR[id].html || '').join('')}
-    ${rug ? `<div class="rug" style="${rugBg(rug)}"></div>` : ''}${petsHTML(S.species, S.partner, eqMain, eqPartner)}
+    ${deco(on.filter(id => !floor(id)))}${petsHTML(S.species, S.partner, eqMain, eqPartner)}${deco(on.filter(floor))}
     <button class="season-nav prev" data-season-step="-1" aria-label="Saison précédente">‹</button><button class="season-nav next" data-season-step="1" aria-label="Saison suivante">›</button>`;
 }
 
@@ -1571,10 +1574,14 @@ function howToGet(k) {
 // Dans l'onglet Réviser, la pièce mesure environ 900 px de large (--H de haut) et s'affiche à l'échelle --z :
 // assez de place pour la déco, et une hauteur qui remplit l'écran (75 %). L'aperçu de la boutique reste à 400 px.
 function fitScene() {
-  const sc = $('#scene'), w = sc.clientWidth;
-  if (!w) return;
-  const z = Math.min(2, Math.max(0.75, w / 900)), h = Math.max(400, Math.min(innerHeight * 0.75, w * 0.72, 800));
-  sc.style.setProperty('--z', z.toFixed(3)); sc.style.setProperty('--H', `${(h / z).toFixed(1)}px`);
+  for (const sc of [$('#scene'), $('#decoScene')]) {
+    const w = sc.clientWidth;
+    if (!w) continue; // onglet caché : refait quand il s'affiche (ResizeObserver)
+    // l'aperçu de la boutique est la même chambre de 900 de large, simplement réduite (pas de minimum), pour que la déco y soit placée pareil
+    const shop = sc.id === 'decoScene', z = shop ? w / 900 : Math.min(2, Math.max(0.75, w / 900));
+    const h = shop ? Math.min(Math.max(260, w * 0.72), 520) : Math.max(400, Math.min(innerHeight * 0.75, w * 0.72, 800));
+    sc.style.setProperty('--z', z.toFixed(3)); sc.style.setProperty('--H', `${(h / z).toFixed(1)}px`);
+  }
 }
 
 function renderCompanions() {
@@ -1966,7 +1973,7 @@ $$('[data-cfg]').forEach(i => i.addEventListener('change', () => {
 }));
 
 document.addEventListener('click', e => e.target.matches('canvas.ville') && VILLE.click(e));
-new ResizeObserver(fitScene).observe($('#scene')); addEventListener('resize', fitScene);
+{ const ro = new ResizeObserver(fitScene); ro.observe($('#scene')); ro.observe($('#decoScene')); } addEventListener('resize', fitScene);
 function stepSeason(dir) {
   const i = SEASON_KEYS.indexOf(S.season), n = SEASON_KEYS.length;
   S.season = SEASON_KEYS[(i + dir + n) % n]; save(); renderAll();
