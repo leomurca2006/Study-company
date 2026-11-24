@@ -320,18 +320,103 @@ function say(kind) { // tirage au hasard, jamais deux fois la même réplique d'
 }
 const talk = () => say('idle');
 
+// ---------- Pixel art de la déco ----------
+// Chaque dessin est une grille : une lettre = une couleur de PXC, '.' = transparent.
+// pix() la transforme en SVG (une <rect> par suite de pixels identiques), k = taille d'un pixel à l'écran.
+const PXC = {
+  k: '#2D1A62', K: '#150B31', u: '#4B1A72', v: '#8E5BB5', V: '#74449B', L: '#C9A6E4', l: '#E7CFF5', w: '#FFF7FE',
+  p: '#FF8FE6', P: '#FF4FD8', r: '#FFB8EE', R: '#FF4F6D', c: '#8FF0FF', C: '#4FE3FF', b: '#BFF6FF',
+  y: '#FFD99A', o: '#FFC46B', O: '#E8943A', g: '#4FE3B0', G: '#22A783', h: '#B8F5E0', s: '#FFE3D3',
+};
+const SPR = {
+  livres: ['kkk......', 'kpkkkk...', 'kpkcck...', 'kwkcckkkk', 'kpkwwkyyk', 'kpkcckyyk', 'kpkcckwwk', 'kwkcckyyk', 'kpkcckyyk', 'kkkkkkkkk'],
+  bougie: ['..o..', '.oyo.', '.oyo.', '..k..', '.kkk.', '.kwk.', '.kwk.', '.klk.', '.kwk.', 'kkkkk'],
+  cactus: ['...kkk...', '..kghgk..', '.kkgGgk..', 'kgkgggkk.', 'kggggGkgk', '.kkgggggk', '..kgGgkk.', '..kgggk..', '.kkkkkkk.', '.kpppppk.', '.kpPPPpk.', '..kpppk..', '..kkkkk..'],
+  plante: ['....k...k....', '...kgk.kgk...', '..kggk.kggk..', 'k.kgGgkgGgk.k', 'kgkggGgGggkgk', 'kggkgggggkggk', '.kgGkgGgkGgk.', '..kggkgkggk..', '...kkgggkk...', '....kkGkk....', '..kkkkkkkkk..', '..kvvvvvvvk..', '..kLLLLLLLk..', '...kvvvvvk...', '...kvvvvvk...', '....kkkkk....'],
+  suspendue: ['...kkkkk...', '..kvvvvvk..', '..kLLLLLk..', '.kgkvvvkgk.', 'kggkkkkkggk', 'kgk.kgk.kgk', '.kgkgGgkgk.', '.kgk.kgk.k.', '..k..kgk...', '.....kk....'],
+  lanterne: ['...kkk...', '..kyyyk..', '.kkkkkkk.', 'kPPPPPPPk', 'kPpPPPpPk', 'kPPPPPPPk', 'kPpPPPpPk', 'kPPPPPPPk', '.kkkkkkk.', '..kyyyk..', '...kok...', '....o....'],
+  cadre: ['kkkkkkkkkkkkkk', 'kook', 'kokkkkkkkkkkok', 'kokbbbbbbyykok', 'kokbbbbbbyykok', 'kokbbbbbbbbkok', 'kokbhhbbbbbkok', 'kokhhhhbbhhkok', 'kokhhghhhhhkok', 'kokkkkkkkkkkok', 'kook', 'kkkkkkkkkkkkkk'],
+  nounours: ['.kk......kk.', 'kook....kook', 'koyokkkkoyok', '.kooooooook.', '.koKooooKok.', '.kooyyyyook.', '.kooykkyook.', '..kooyyook..', '.kkooooookk.', 'kookyyyykook', '.kkoyyyyokk.', '.kooooooook.', 'kyyok..koyyk', 'kkkk....kkkk'],
+  horloge: ['...kkkkkk...', '..kooooook..', '.kowwwwwwok.', 'kowwwkwwwwok', 'kowwwkwwwwok', 'kowwwkwwwwok', 'kowwwkkkkwok', 'kowwwwwwwwok', 'kowwwwwwwwok', '.kowwwwwwok.', '..kooooook..', '...kkkkkk...'],
+  lune: ['..kkk..', '.kyyk..', 'kyyk...', 'kyyk...', 'kyyk...', 'kyyyk..', '.kyyykk', '..kkkk.'],
+  bocal: ['..kkkkkkkkkk..', '...kwwwwwwk...', '..kbbbbbbbbk..', '.kbbbbbbbbbbk.', 'kbbbbbppbbbbbk', 'kbbbbppppbpbbk', 'kbbbbpKppppbbk', 'kbbbbppppbpbbk', 'kccbbbppbbbbck', 'kcccccccccccck', '.kcgcccccgcck.', '..kkkkkkkkkk..'],
+  ampoule: ['.kkk.', 'kyyyk', 'kyoyk', 'kyyyk', '.kyk.', '.kuk.', '..k..'],
+  rideau: ['kkkkkkkkkk', 'kpPpkkpPpk', 'kpPpkkpPpk', 'kpPpkkpPpk', 'kpPk..kPpk', 'kpk....kpk', 'kpk....kpk', 'kk......kk'],
+  // saisons
+  fleur: ['.p.p.', 'ppppp', '.pyp.', 'ppppp', '.p.p.'],
+  tulipeMini: ['p.p.p', 'ppppp', 'pPppp', '.ppp.', '..g..', '.g.g.'],
+  petale: ['.rr.', 'rppr', '.rp.'],
+  tulipe: ['.k..k..k.', 'kpkkpkkpk', 'kpppppppk', 'kppPpPppk', '.kpppppk.', '..kkkkk..', '....g....', 'kk..g..kk', 'kgk.g.kgk', '.kgkgkgk.', '..kgggk..', '...kgk...', '..kkkkk..', '.kvvvvvk.', '.kLLLLLk.', '..kvvvk..', '..kkkkk..'],
+  pousse: ['.gg.gg.', 'gGgkgGg', '.ggkgg.', '...g...', '...g...', '.vvvvv.', 'vVVVVVv'],
+  poussin: ['...kkkk...', '..kyyyyk..', '.kyKyyKyk.', '.kyyooyyk.', '.kyyyyyyk.', 'kwkwkwkwkk', 'kwwwwwwwwk', 'kwwlwwwwwk', '.kwwwwwwk.', '..kkkkkk..'],
+  panier: ['...kkkkkk...', '..k......k..', '.k..kpkck.k.', 'kkkkkkkkkkkk', 'kyoyoyoyoyok', 'koyoyoyoyoyk', '.kyoyoyoyok.', '.koyoyoyoyk.', '..kkkkkkkk..'],
+  theiere: ['.....kk.....', '....kPPk....', '..kkkkkkkk..', 'kkkppppppk.k', 'k.kprpppppkk', 'kkkppppppPk.', '..kpppppppk.', '...kkkkkkk..'],
+  fraise: ['..gkg..', '.kgggk.', 'kRRRRRk', 'kRyRRyk', 'kRRRyRk', '.kRyRk.', '..kRk..', '...k...'],
+  papillon: ['kk.....kk', 'kPk...kPk', 'kPPk.kPPk', '.kPPkPPk.', '.kcckcck.', 'kcck.kcck', 'kkk...kkk'],
+  fanion: ['kkkkkkk', 'kPPPPPk', '.kPPPk.', '.kPPPk.', '..kPk..', '..kPk..', '...k...'],
+  palmier: ['.....ggg..ggg.....', '...ggGGGggGGGgg...', '..gGGggGGGGggGGg..', '.gGg..gGGGGg..gGg.', 'gGg..gG.oo.Gg..gGg', 'gg..gG.oooo.Gg..gg', 'g...g..ovvo..g...g', '........vV........', '........vv........', '........VV........', '.......vv.........', '.......VV.........', '.......vv.........', '.......VV.........', '.......vv.........', '.......VVv........', '.......vvv........', '......vVVVv.......', '....yyyyyyyyy.....', '..yyyyyyyyyyyyy...'],
+  ballon: ['..kkk..', '.kwcck.', 'kwwcwwk', 'kcccwwk', 'kwwcwck', '.kwcck.', '..kkk..'],
+  bouee: ['....kkkk....', '..kkPPwwkk..', '.kPPPPwwwwk.', '.kPPkkkkwwk.', 'kPPk....kwwk', 'kPPk....kwwk', 'kwwk....kPPk', 'kwwk....kPPk', '.kwwkkkkPPk.', '.kwwwwPPPPk.', '..kkwwPPkk..', '....kkkk....'],
+  coquillage: ['...kkk...', '..krrrk..', '.krkrkrk.', 'krrkrkrrk', 'krkrrrkrk', 'krrkrkrrk', '.kkrrrkk.', '...kkk...'],
+  tong: ['.kkkk.', 'kcccck', 'kcPPck', 'kPccPk', 'kcccck', 'kcccck', 'kcccck', 'kcccck', '.kcck.', '..kk..'],
+  cocktail: ['.....k...', '....k....', 'kkkkkkkkk', 'kwppppppk', '.kwppppk.', '.koooook.', '..kooook.', '...kook..', '....k....', '....k....', '..kkkkk..'],
+  pasteque: ['kkkkkkkkkk', 'kRRKRRKRRk', 'kwRRRKRRwk', '.kgwwwwgk.', '..kggggk..', '...kkkk...'],
+  erable: ['...R...', '.R.R.R.', 'RRRRRRR', '.RRRRR.', 'RRRRRRR', '...v...', '...v...'],
+  feuille: ['....oO', '..oooO', '.oooO.', 'ooOo..', 'oOo...', 'v.....'],
+  citrouille: ['.....kk.....', '.....gk.....', '..kkkkkkkk..', '.kooOooOook.', 'kooKKooKKook', 'kooOooooOook', 'kooKoKKoKook', 'kooOKKKKOook', '.koOooooOok.', '..kkkkkkkk..'],
+  champignon: ['..kkkk..', '.kRRwRk.', 'kRwRRRRk', 'kRRRRwRk', 'kkkkkkkk', '..kwwk..', '..kwwk..', '..kkkk..'],
+  herisson: ['...k.k.k.k....', '..kVkVkVkVk...', '.kVVVVVVVVVk..', 'kVVVVVVVVVkkk.', 'kVVVVVVVVkyyyk', 'kVVVVVVVVkyKyk', '.kVVVVVVVkyyyK', '..kkkkkkkkkkk.', '...kk....kk...'],
+  pomme: ['...kgg..', '...k....', '.kkkkkk.', 'kRRwRRRk', 'kRRRRRRk', 'kRRRRRRk', '.kRRRRk.', '..kkkk..'],
+  tasse: ['kkkkkkk..', 'kvvvvvk..', 'kwwwwwkkk', 'kwPwPwk.k', 'kwwwwwkkk', '.kwwwk...', 'kkkkkkk..'],
+  tarte: ['..kkkkkkkk..', '.kyoyoyoyok.', 'kyoyoyoyoyok', 'kkkkkkkkkkkk', '.kLLLLLLLLk.', '..kkkkkkkk..'],
+  sapin: ['.......y.......', '......yyy......', '.......y.......', '......kGk......', '.....kGgGk.....', '....kGGPGGk....', '...kGgGGGgGk...', '....kkGGGkk....', '....kGgGGGk....', '...kGGcGGgGk...', '..kGgGGGGoGGk..', '.kkkGGGGGgGkkk.', '...kGGGPGGGk...', '..kGGoGGgGcGk..', '.kGgGGGGGGGgGk.', 'kGGGcGGGPGGGgGk', 'kkkkkkkkkkkkkkk', '......kvk......', '......kvk......', '....kkkkkkk....', '....kLLLLLk....', '.....kkkkk.....'],
+  cadeau: ['..kk.kk..', '.kPkkkPk.', 'kkkkkkkkk', 'kcccPccck', 'kcccPccck', 'kPPPPPPPk', 'kcccPccck', 'kcccPccck', 'kkkkkkkkk'],
+  pereNoel: ['.....kkkk.....', '...kkRRRRk....', '..kRRRRRRRk.kk', '.kRRRRRRRRRkwk', 'kwwwwwwwwwwwkk', 'kwwwwwwwwwwwk.', '.ksssssssssk..', '.ksKssssKssk..', '.kssrsssrsskk.', 'kwwwwRRwwwwwk.', 'kwwwwwwwwwwwk.', '.kwwwwwwwwwk..', '..kwwwwwwwk...', '...kkkkkkk....'],
+  bonhomme: ['...kkkk...', '..kKKKKk..', '..kKKKKk..', '.kkkkkkkk.', '..kwwwwk..', '.kwKwwKwk.', '.kwwoowwk.', '..kwwwwk..', '.kPPPPPPk.', 'kwwwPwwwwk', 'kwwwwKwwwk', 'kwwwwwwwwk', 'kwwwwKwwwk', '.kkkkkkkk.'],
+  chaussette: ['kkkkk..', 'kwwwk..', 'kkkkk..', 'kRRRk..', 'kRwRk..', 'kRRRk..', 'kRRRRkk', 'kRwRRRk', 'kRRRRRk', '.kkkkk.'],
+  cloche: ['....k....', '...kok...', '..kyyok..', '.kyyyyok.', '.kyyyyok.', '.kyyyyok.', 'kyyyyyyok', 'kkkkkkkkk', '...kok...', '....k....'],
+  cookie: ['..kkk..', '.kooKk.', 'kKooook', 'kooKook', 'koooKok', '.kKook.', '..kkk..'],
+  // jardin
+  arbre: ['.....kkkkkkk......', '...kkgggggggkk....', '..kggggggGggggk...', '.kgggGgggggggggk..', '.kggggggggGgggggk.', 'kgggggGgggggggggk.', 'kggGgggggggGggggk.', 'kggggggggggggGgggk', 'kgggggGgggggggggk.', '.kgggggggGggggggk.', '.kkgggggggggggkk..', '...kkggGgggggkk...', '....kkkkvvkkk.....', '.......kvVk.......', '.......kvVk.......', '.......kvVk.......', '......kvvVVk......', '.....kkkkkkkk.....'],
+  buisson: ['...kkk.kkk..', '.kkgggkgggk.', 'kgggGgggGggk', 'kggggggggggk', 'kgGgggggGggk', '.kkkkkkkkkk.'],
+};
+SPR.cadre[1] = SPR.cadre[10] = 'k' + 'o'.repeat(12) + 'k';
+SPR.cadeau2 = SPR.cadeau.map(r => r.replace(/c/g, 'y').replace(/P/g, 'g'));
+const pxCache = {};
+function pix(name, k = 3, swap = '') { // swap = 'ab' : la couleur a devient b (ex. fanions, chaussettes)
+  const key = `${name}|${k}|${swap}`;
+  if (pxCache[key]) return pxCache[key];
+  const rows = SPR[name].map(r => swap ? r.split(swap[0]).join(swap[1]) : r);
+  const w = Math.max(...rows.map(r => r.length)), h = rows.length;
+  let rects = '';
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length;) {
+      let n = 1; while (row[x + n] === row[x]) n++;
+      if (PXC[row[x]]) rects += `<rect x="${x}" y="${y}" width="${n}" height="1" fill="${PXC[row[x]]}"/>`;
+      x += n;
+    }
+  });
+  return pxCache[key] = `<svg class="px" style="width:${w * k / 16}em;height:${h * k / 16}em" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+}
+const thumb = name => { const r = SPR[name]; return pix(name, Math.max(1, Math.floor(48 / Math.max(r.length, ...r.map(x => x.length))))); };
+// lit = source de lumière : un halo s'allume la nuit (CSS .lit ; lantern / fish = autre couleur)
+const lit = (html, cls = '') => `<span class="lit ${cls}">${html}</span>`;
+const sp = (name, style, k = 3, cls = '', swap = '') => `<span class="sd ${cls}" style="${style}">${pix(name, k, swap)}</span>`;
+// posé sur le rebord de la fenêtre (--winL = marge entre le mur et la fenêtre, voir .room) ; em = taille d'un dessin
+const SILL = 'top:calc(59% - 6px);transform:translateY(-100%)';
+const sillL = (i = 0) => `left:calc(var(--winL) + ${2.5 + i * 2.2}em);${SILL}`, sillR = (i = 0) => `right:calc(var(--winL) + ${1 + i * 2.2}em);${SILL}`;
+
 // ---------- Saisons : base (murs, sol, ce qui tombe) choisie avec les flèches de la scène ----------
 // '' = la chambre achetée, sans saison. Les murs et sols sont en CSS (.scene[data-saison=…]).
-const sd = (style, x, cls = '') => `<span class="sd ${cls}" style="${style}">${x}</span>`;  // .sd ne capte pas les clics
 const bunting = (cls, items) => `<div class="sd bunting ${cls}">${items.map((x, i) => `<i style="--i:${i}">${x}</i>`).join('')}</div>`;
 const falling = (items, n) => Array.from({ length: n }, (_, i) =>
-  sd(`left:${8 + i * 84 / n}%;animation-duration:${7 + i % 3 * 2}s;animation-delay:-${(i * 2.3).toFixed(1)}s`, items[i % items.length], 'fall')).join('');
+  `<span class="sd fall" style="left:${8 + i * 84 / n}%;animation-duration:${7 + i % 3 * 2}s;animation-delay:-${(i * 2.3).toFixed(1)}s">${items[i % items.length]}</span>`).join(''); // .sd ne capte pas les clics
 const LIGHTS = ['#FF4FD8', '#4FE3FF', '#FFC46B', '#4FE3B0'];
 const SEASONS = {
   '':        { name: 'Ma chambre', icon: '🛏️', base: '' },
-  printemps: { name: 'Printemps', icon: '🌸', base: falling(['🌸', '🌸', '🌼'], 5) },
+  printemps: { name: 'Printemps', icon: '🌸', base: falling([pix('petale'), pix('petale', 3, 'pw'), pix('petale')], 5) },
   ete:       { name: 'Été', icon: '☀️', base: '' },
-  automne:   { name: 'Automne', icon: '🍂', base: falling(['🍂', '🍁', '🍂'], 6) },
+  automne:   { name: 'Automne', icon: '🍂', base: falling([pix('feuille', 2), pix('erable', 2), pix('feuille', 2, 'oR')], 6) },
   hiver:     { name: 'Hiver', icon: '❄️', base: '' },
 };
 const SEASON_KEYS = Object.keys(SEASONS);
@@ -339,41 +424,41 @@ const SEASON_KEYS = Object.keys(SEASONS);
 // ---------- Décoration de la pièce ----------
 // season : l'objet ne s'affiche que pendant cette saison (catégorie Saisons de la boutique)
 const DECOR = {
-  etagere:     { name: 'Étagère', icon: '📚', price: 0, html: '<div class="d shelf"><span>📚</span><span>🕯️</span><span>🌵</span></div>' },
-  plante:      { name: 'Grande plante', icon: '🪴', price: 0, html: '<span class="d" style="right:6%;bottom:40px;font-size:2.8rem">🪴</span>' },
+  etagere:     { name: 'Étagère', icon: 'livres', price: 0, html: `<div class="d shelf">${pix('livres', 2)}${lit(pix('bougie', 2))}${pix('cactus', 2)}</div>` },
+  plante:      { name: 'Grande plante', icon: 'plante', price: 0, html: sp('plante', 'right:18.5%;bottom:30px') },
   tapisLav:    { name: 'Tapis lavande', price: 0, rug: '#E7CFF5' },
   tapisRose:   { name: 'Tapis rose', price: 100, rug: '#FFB8EE' },
   tapisMenthe: { name: 'Tapis menthe', price: 100, rug: '#B8F5E0' },
   tapisSoleil: { name: 'Tapis soleil', price: 100, rug: '#FFD99A' },
-  suspendue:   { name: 'Plante suspendue', icon: '🌿', price: 120, html: '<span class="d hang">🌿</span>' },
-  cadre:       { name: 'Cadre', icon: '🖼️', price: 140, html: '<span class="d" style="right:6%;top:120px;font-size:2.2rem">🖼️</span>' },
-  nounours:    { name: 'Nounours', icon: '🧸', price: 150, html: '<span class="d" style="left:7%;bottom:22px;font-size:2.4rem">🧸</span>' },
-  horloge:     { name: 'Horloge', icon: '🕰️', price: 180, html: '<span class="d" style="left:8%;top:118px;font-size:2rem">🕰️</span>' },
-  guirlande:   { name: 'Guirlande lumineuse', icon: '✨', price: 220, html: '<div class="d garland"></div>' },
-  aquarium:    { name: 'Bocal à poisson', icon: '🐠', price: 260, html: '<span class="d bowl">🐠</span>' },
-  rideaux:     { name: 'Rideaux roses', icon: '🎀', price: 300, html: '<div class="d curtain l"></div><div class="d curtain r"></div>' },
-  poster:      { name: 'Poster lune', icon: '🌙', price: 130, html: '<span class="d poster">🌙</span>' },
-  lampe:       { name: 'Lanterne', icon: '🏮', price: 160, html: '<span class="d hang" style="right:auto;left:16%">🏮</span>' },
-  fleursGuir:  { season: 'printemps', name: 'Guirlande de fleurs', icon: '🌸', price: 90, html: bunting('emoji', ['🌸', '🌼', '🌸', '🌷', '🌸', '🌼', '🌸', '🌷']) },
-  tulipes:     { season: 'printemps', name: 'Grande tulipe', icon: '🌷', price: 80, html: sd('left:2%;bottom:24px;font-size:3.4rem', '🌷') + sd('left:13%;bottom:10px;font-size:1.6rem', '🌱') },
-  poussin:     { season: 'printemps', name: 'Poussin et panier', icon: '🐣', price: 70, html: sd('right:3%;bottom:20px;font-size:2rem', '🐣') + sd('right:11%;bottom:12px;font-size:1.8rem', '🧺') },
-  the:         { season: 'printemps', name: 'Thé et fraise', icon: '🫖', price: 60, html: sd('left:calc(22% + 40px);top:204px;font-size:1.5rem', '🫖') + sd('right:calc(22% + 16px);top:206px;font-size:1.4rem', '🍓') },
-  papillon:    { season: 'printemps', name: 'Papillon', icon: '🦋', price: 50, html: sd('left:30%;top:60px;font-size:1.2rem', '🦋', 'flutter') },
-  fanions:     { season: 'ete', name: 'Fanions', icon: '🚩', price: 90, html: bunting('flags', Array(10).fill('')) },
-  palmier:     { season: 'ete', name: 'Palmier', icon: '🌴', price: 120, html: sd('left:1%;bottom:22px;font-size:5rem', '🌴') + sd('left:15%;bottom:8px;font-size:1.6rem', '🏐') },
-  bouee:       { season: 'ete', name: 'Bouée', icon: '🛟', price: 60, html: sd('right:5%;top:46px;font-size:2.4rem', '🛟') },
-  plage:       { season: 'ete', name: 'Coquillage et tongs', icon: '🐚', price: 50, html: sd('right:3%;bottom:16px;font-size:1.8rem', '🐚') + sd('right:11%;bottom:10px;font-size:1.6rem', '🩴') },
-  cocktail:    { season: 'ete', name: 'Cocktail et pastèque', icon: '🍹', price: 60, html: sd('left:calc(22% + 40px);top:202px;font-size:1.6rem', '🍹') + sd('right:calc(22% + 16px);top:206px;font-size:1.4rem', '🍉') },
-  feuillesGuir:{ season: 'automne', name: 'Guirlande de feuilles', icon: '🍁', price: 90, html: bunting('emoji', ['🍁', '🍂', '🍁', '🍂', '🍁', '🍂', '🍁', '🍂']) },
-  citrouilles: { season: 'automne', name: 'Citrouilles', icon: '🎃', price: 100, html: sd('left:2%;bottom:14px;font-size:2.8rem', '🎃') + sd('left:12%;bottom:8px;font-size:1.8rem', '🎃') + sd('left:18%;bottom:12px;font-size:1.3rem', '🍄') },
-  herisson:    { season: 'automne', name: 'Hérisson', icon: '🦔', price: 80, html: sd('right:3%;bottom:16px;font-size:2rem', '🦔') + sd('right:11%;bottom:10px;font-size:1.6rem', '🍎') },
-  gouter:      { season: 'automne', name: 'Goûter d\'automne', icon: '🥧', price: 70, html: sd('left:calc(22% + 40px);top:204px;font-size:1.5rem', '☕', 'cup') + sd('right:calc(22% + 16px);top:204px;font-size:1.5rem', '🥧') + sd('right:calc(22% + 44px);top:204px;font-size:1.3rem', '🕯️') },
-  noelGuir:    { season: 'hiver', name: 'Guirlande de Noël', icon: '💡', price: 110, html: bunting('lights', LIGHTS.concat(LIGHTS, LIGHTS).map(c => `<b style="--c:${c}"></b>`)) },
-  sapin:       { season: 'hiver', name: 'Sapin et cadeaux', icon: '🎄', price: 150, html: sd('left:1%;bottom:26px;font-size:5.4rem', '🎄') + sd('left:12%;bottom:8px;font-size:1.6rem', '🎁') + sd('left:3%;bottom:4px;font-size:1.4rem', '🎁') },
-  pereNoel:    { season: 'hiver', name: 'Père Noël', icon: '🎅', price: 130, html: sd('right:3%;bottom:20px;font-size:2.6rem', '🎅') },
-  bonhomme:    { season: 'hiver', name: 'Bonhomme de neige', icon: '⛄', price: 70, html: sd('right:13%;bottom:10px;font-size:1.6rem', '⛄') },
-  chaussettes: { season: 'hiver', name: 'Chaussettes et cloche', icon: '🧦', price: 60, html: sd('right:7%;top:34px;font-size:1.5rem', '🧦🧦') + sd('left:6%;top:150px;font-size:1.6rem', '🔔') },
-  chocolat:    { season: 'hiver', name: 'Chocolat chaud', icon: '☕', price: 80, html: sd('left:calc(22% + 40px);top:204px;font-size:1.5rem', '☕', 'cup') + sd('left:calc(22% + 68px);top:208px;font-size:1.2rem', '🍪') + sd('right:calc(22% + 16px);top:204px;font-size:1.4rem', '🕯️') },
+  suspendue:   { name: 'Plante suspendue', icon: 'suspendue', price: 120, html: `<span class="d hang">${pix('suspendue')}</span>` },
+  cadre:       { name: 'Cadre', icon: 'cadre', price: 140, html: sp('cadre', 'right:6%;top:30%') },
+  nounours:    { name: 'Nounours', icon: 'nounours', price: 150, html: sp('nounours', 'left:24%;bottom:22px') },
+  horloge:     { name: 'Horloge', icon: 'horloge', price: 180, html: sp('horloge', 'left:8%;top:29%') },
+  guirlande:   { name: 'Guirlande lumineuse', icon: 'ampoule', price: 220, html: '<div class="d garland"></div>' },
+  aquarium:    { name: 'Bocal à poisson', icon: 'bocal', price: 260, html: sp('bocal', 'right:28%;bottom:20px', 3, 'lit fish') },
+  rideaux:     { name: 'Rideaux roses', icon: 'rideau', price: 300, html: '<div class="d curtain l"></div><div class="d curtain r"></div>' },
+  poster:      { name: 'Poster lune', icon: 'lune', price: 130, html: `<span class="d poster">${pix('lune')}</span>` },
+  lampe:       { name: 'Lanterne', icon: 'lanterne', price: 160, html: `<span class="d hang" style="right:auto;left:16%">${lit(pix('lanterne'), 'lantern')}</span>` },
+  fleursGuir:  { season: 'printemps', name: 'Guirlande de fleurs', icon: 'fleur', price: 90, html: bunting('', [0, 1, 0, 2, 0, 1, 0, 2].map(i => [pix('fleur'), pix('fleur', 3, 'pw'), pix('tulipeMini')][i])) },
+  tulipes:     { season: 'printemps', name: 'Grande tulipe', icon: 'tulipe', price: 80, html: sp('tulipe', 'left:2%;bottom:20px') + sp('pousse', 'left:10%;bottom:10px') },
+  poussin:     { season: 'printemps', name: 'Poussin et panier', icon: 'poussin', price: 70, html: sp('poussin', 'right:3%;bottom:20px') + sp('panier', 'right:12%;bottom:12px', 2) },
+  the:         { season: 'printemps', name: 'Thé et fraise', icon: 'theiere', price: 60, html: sp('theiere', sillL()) + sp('fraise', sillR()) },
+  papillon:    { season: 'printemps', name: 'Papillon', icon: 'papillon', price: 50, html: sp('papillon', 'left:30%;top:13%', 3, 'flutter') },
+  fanions:     { season: 'ete', name: 'Fanions', icon: 'fanion', price: 90, html: bunting('', Array.from({ length: 10 }, (_, i) => pix('fanion', 2, 'P' + 'PCog'[i % 4]))) },
+  palmier:     { season: 'ete', name: 'Palmier', icon: 'palmier', price: 120, html: sp('palmier', 'left:1%;bottom:12px') + sp('ballon', 'left:15%;bottom:8px') },
+  bouee:       { season: 'ete', name: 'Bouée', icon: 'bouee', price: 60, html: sp('bouee', 'right:6%;top:46%') },
+  plage:       { season: 'ete', name: 'Coquillage et tongs', icon: 'coquillage', price: 50, html: sp('coquillage', 'right:3%;bottom:16px') + sp('tong', 'right:12%;bottom:10px', 2) },
+  cocktail:    { season: 'ete', name: 'Cocktail et pastèque', icon: 'cocktail', price: 60, html: sp('cocktail', sillL()) + sp('pasteque', sillR()) },
+  feuillesGuir:{ season: 'automne', name: 'Guirlande de feuilles', icon: 'erable', price: 90, html: bunting('', Array.from({ length: 8 }, (_, i) => i % 2 ? pix('feuille') : pix('erable'))) },
+  citrouilles: { season: 'automne', name: 'Citrouilles', icon: 'citrouille', price: 100, html: sp('citrouille', 'left:1%;bottom:12px', 4) + sp('citrouille', 'left:12.5%;bottom:8px') + sp('champignon', 'left:20%;bottom:10px', 2) },
+  herisson:    { season: 'automne', name: 'Hérisson', icon: 'herisson', price: 80, html: sp('herisson', 'right:2%;bottom:16px') + sp('pomme', 'right:12.5%;bottom:10px') },
+  gouter:      { season: 'automne', name: 'Goûter d\'automne', icon: 'tarte', price: 70, html: sp('tasse', sillL(), 3, 'cup') + sp('tarte', sillR()) + sp('bougie', sillR(1), 2, 'lit') },
+  noelGuir:    { season: 'hiver', name: 'Guirlande de Noël', icon: 'ampoule', price: 110, html: bunting('lights', LIGHTS.concat(LIGHTS, LIGHTS).map(c => `<b style="--c:${c}"></b>`)) },
+  sapin:       { season: 'hiver', name: 'Sapin et cadeaux', icon: 'sapin', price: 150, html: sp('sapin', 'left:1%;bottom:14px', 4) + sp('cadeau', 'left:16%;bottom:8px') + sp('cadeau2', 'left:4%;bottom:2px') },
+  pereNoel:    { season: 'hiver', name: 'Père Noël', icon: 'pereNoel', price: 130, html: sp('pereNoel', 'right:2%;bottom:20px') },
+  bonhomme:    { season: 'hiver', name: 'Bonhomme de neige', icon: 'bonhomme', price: 70, html: sp('bonhomme', 'right:13%;bottom:10px', 2) },
+  chaussettes: { season: 'hiver', name: 'Chaussettes et cloche', icon: 'chaussette', price: 60, html: sp('chaussette', 'right:20.5%;top:5%', 2) + sp('chaussette', 'right:17.5%;top:6%', 2, '', 'Rc') + sp('cloche', 'right:7%;top:46%') },
+  chocolat:    { season: 'hiver', name: 'Chocolat chaud', icon: 'tasse', price: 80, html: sp('tasse', sillL(), 3, 'cup') + sp('cookie', sillL(1)) + sp('bougie', sillR(), 2, 'lit') },
 };
 
 // ---------- Boutique : ambiances et thèmes ----------
@@ -1085,8 +1170,8 @@ const SPOTS = [[15, 55], [34, 53], [53, 55], [10, 71], [30, 70], [50, 72], [8, 9
 const GARDEN_DECOR = `${VIEWS.ciel.html()}<span class="hill h1"></span><span class="hill h2"></span>
   <span class="fence"></span><span class="gate"></span><span class="lawn"></span>
   <svg class="path" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M56 100C62 82 80 66 77 47L83 47C88 66 80 84 78 100Z"/></svg>
-  <span class="tree">🌳</span><span class="bush">🌿</span>
-  <span class="fly f1">🦋</span><span class="fly f2">🦋</span>
+  <span class="tree">${pix('arbre', 5)}</span><span class="bush">${pix('buisson', 4)}</span>
+  <span class="fly f1">${pix('papillon', 2)}</span><span class="fly f2">${pix('papillon', 2, 'Pp')}</span>
   ${Array.from({ length: 8 }, (_, i) => `<i class="firefly" style="left:${8 + i * 12}%;top:${50 + (i * 17) % 40}%;animation-delay:-${i * 0.9}s"></i>`).join('')}`;
 
 function renderGarden() {
@@ -1159,6 +1244,15 @@ function howToGet(k) {
   return [P.price != null && `${P.price} 🪙`, ...eggs].filter(Boolean).join(' ou ');
 }
 
+// Dans l'onglet Réviser, la pièce mesure environ 900 px de large (--H de haut) et s'affiche à l'échelle --z :
+// assez de place pour la déco, et une hauteur qui remplit l'écran (75 %). L'aperçu de la boutique reste à 400 px.
+function fitScene() {
+  const sc = $('#scene'), w = sc.clientWidth;
+  if (!w) return;
+  const z = Math.min(2, Math.max(0.75, w / 900)), h = Math.max(400, Math.min(innerHeight * 0.75, w * 0.72, 800));
+  sc.style.setProperty('--z', z.toFixed(3)); sc.style.setProperty('--H', `${(h / z).toFixed(1)}px`);
+}
+
 function renderCompanions() {
   $$('.scene').forEach(s => s.classList.toggle('has-partner', S.partner));
   $('#scene').dataset.chambre = S.room; $('#scene').dataset.saison = S.season;
@@ -1212,7 +1306,7 @@ let tryRoom = null, tryView = null; // chambre et vue essayées dans la boutique
 // thèmes, chambres, vues : « ✓ Actif », « Utiliser » ou le prix
 const useBtn = (owned, active, attr, price) => active ? '<span class="owned">✓ Actif</span>' : owned ? `<button class="btn" ${attr}>Utiliser</button>` : buyBtn(attr, price);
 const decorItem = ([id, d]) =>
-  shopItem(`<button class="preview-btn ${tryDecor === id ? 'trying' : ''}" data-try-decor="${id}" aria-label="Essayer : ${d.name}">${d.rug ? `<span class="rug-swatch" style="background:${d.rug}"></span>` : `<span class="emoji">${d.icon}</span>`}</button>`,
+  shopItem(`<button class="preview-btn ${tryDecor === id ? 'trying' : ''}" data-try-decor="${id}" aria-label="Essayer : ${d.name}">${d.rug ? `<span class="rug-swatch" style="background:${d.rug}"></span>` : `<span class="thumb">${thumb(d.icon)}</span>`}</button>`,
       d.name, `data-decor="${id}"`, S.decor.owned.includes(id), S.decor.on.includes(id), d.price, 'Ranger', 'Placer');
 const SHOP_CATS = { oeufs: '🥚 Œufs', accessoires: '👗 Accessoires', decor: '🏠 Décor', saisons: '🍂 Saisons', chambres: '🛏️ Chambres', vues: '🪟 Vues', ambiances: '🎧 Ambiances', utilitaires: '🧰 Utilitaires' };
 const SHOP = {
@@ -1237,7 +1331,7 @@ const SHOP = {
   saisons: () => '<p class="hint">Ces objets n\'apparaissent que pendant leur saison. Change de saison avec les flèches ‹ › de ta chambre.</p>' +
     SEASON_KEYS.filter(Boolean).map(k => `<h3 class="slot-title">${SEASONS[k].icon} ${SEASONS[k].name}</h3><div class="grid">` +
       Object.entries(DECOR).filter(([, d]) => d.season === k).map(decorItem).join('') + '</div>').join(''),
-  ambiances: () => '<p class="hint">Clique sur une icône pour écouter un extrait. Le volume se règle dans l\'onglet Réviser.</p><div class="grid">' +
+  ambiances: () => '<p class="hint">Clique sur une icône pour écouter un extrait. Le volume se règle dans l\'onglet Outils.</p><div class="grid">' +
     Object.entries(AMBIANCES).map(([k, a]) => card(`<button class="preview-btn" data-listen="${k}" aria-label="Écouter : ${a.name}"><span class="emoji">${a.icon}</span></button>`,
       a.name, a.desc, S.sounds.includes(k) ? '<span class="owned">✓ Possédé</span>' : buyBtn(`data-sound="${k}"`, a.price))).join('') + '</div>',
   utilitaires: () => '<div class="grid">' + card('<span class="emoji">🧊</span>', 'Gel de série', `Protège ta série un jour sans révision. Réserve : ${S.freezes} / ${CFG.freezeMax}`,
@@ -1386,7 +1480,7 @@ document.addEventListener('click', e => {
   if (ds.sound) {
     const a = AMBIANCES[ds.sound];
     if (S.sounds.includes(ds.sound) || !buy(a.price, a.name)) return;
-    S.sounds.push(ds.sound); toast(`${a.icon} ${a.name} : règle son volume dans l'onglet Réviser`); save(); renderAll();
+    S.sounds.push(ds.sound); toast(`${a.icon} ${a.name} : règle son volume dans l'onglet Outils`); save(); renderAll();
   }
   if ('freeze' in ds) {
     if (S.freezes >= CFG.freezeMax || !buy(CFG.freezePrice, 'Gel de série')) return;
@@ -1520,6 +1614,7 @@ $$('[data-cfg]').forEach(i => i.addEventListener('change', () => {
 }));
 
 document.addEventListener('click', e => e.target.matches('canvas.ville') && VILLE.click(e));
+new ResizeObserver(fitScene).observe($('#scene')); addEventListener('resize', fitScene);
 function stepSeason(dir) {
   const i = SEASON_KEYS.indexOf(S.season), n = SEASON_KEYS.length;
   S.season = SEASON_KEYS[(i + dir + n) % n]; save(); renderAll();
@@ -1568,6 +1663,7 @@ console.assert(fmt(65) === '01:05' && fmt(3661) === '1:01:01', 'fmt');
 console.assert(levelOf(0) === 1 && levelOf(49) === 1 && levelOf(50) === 2 && levelOf(1500) === 10, 'levelOf');
 console.assert(COLL.length === 12 && ACH.length >= 20 && new Set(ACH.map(a => a.id)).size === ACH.length, 'collection et succès');
 console.assert(Object.values(EGGS).every(E => Math.abs(Object.values(E.odds).reduce((a, b) => a + b) - 1) < 1e-9), 'probabilités des œufs');
+console.assert(Object.values(DECOR).every(d => d.rug || SPR[d.icon]) && Object.values(SPR).every(r => r.join('').split('').every(ch => ch === '.' || PXC[ch])), 'dessins de la déco');
 console.assert(fmtMin(59) === '59 min' && fmtMin(125) === '2 h 05', 'fmtMin');
 
 // ids inconnus (sauvegarde importée ou ancienne) : on les retire plutôt que de planter
