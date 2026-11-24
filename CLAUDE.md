@@ -6,6 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "Jardin d'Étude": a gamified study timer (pomodoro / free countdown / stopwatch) with a garden, missions, daily events, a companion pet with cosmetics, room decoration and a generated lofi ambience. Static site, vanilla HTML/CSS/JS, no build, no dependencies (only Google Fonts). All UI text is in French; keep it that way.
 
+## Game rules (the player's spec, all implemented; keep them true)
+
+Numbers live in `CFG`, `LEVELS`, `STREAK_REWARDS` and `EGGS`; change them there.
+
+- **Timers**: chrono (with pause), free countdown (`libre`), pomodoro at 25/5, 50/10 or 90/20 (or custom) with a chosen number of pomodoros (`S.cfg.rounds`). After the last one the series stops (no break).
+- **Coins**: 1 per minute of work, +10 for a session finished without abandoning (`coinsFull`). Abandoning keeps everything already earned and costs nothing.
+- **Pause during work**: free up to 10 min in total per focus session (`pauseFree`). Past that, -1 coin per minute (`pausePenalty`), taken as it happens (`chargePause()`, run on resume, on abandon and every 30 s).
+- **Friendship**: 1 PA per minute (`paPerMin`), and a level is 100 PA, so 10 min = 10 % of a level. Every 15 h without studying (`decayHours`), the active companion loses 25 % of its PA (`decayRate`), repeated until the player studies again. Levels can go down.
+- **Companion lines**: welcome on load (`hello`, or `back` after 2+ days away), encouragement during work (`start`, `mid`), rest during breaks (`pause`), and congratulations at the end (`end`).
+- **Eggs**: one egg per rarity (Boutique › Œufs). Each hatches a companion of its rarity after 3 h (commun), 6 h (peu commun), 10 h (rare), 15 h (épique), 20 h (légendaire) or 24 h (mythique) of study. Study minutes count for every egg at once. Egg accelerators (60 coins = 1 h, `boostPrice`/`boostMin`) are kept in `S.boosts` and used from the Couveuse.
+- **Collection**: 25 companions. In eggs: 5 commun, 5 peu commun, 4 rare, 4 épique, 3 légendaire, 3 mythique. The hibou (`egg: false`) is the exclusive companion of a 30-day streak. A `console.assert` checks these counts.
+- **Streak**: the player validates each day by clicking the "Je suis là" badge on the room (`checkIn()`). Freezes (150 coins) cover missed days. `STREAK_REWARDS`: 7 days = 50 coins, 14 days = 1 egg accelerator, 30 days = hibou (150 coins if already owned), 90 days = 500 coins.
+- **Shop**: companion cosmetics, room decor, seasonal decor, rooms, window views, colour themes, ambience sounds, egg accelerators and streak freezes.
+- **Events**: one per month, active from the 1st to the 7th (`eventDays`, `eventOf()` / `monthEvent()`). The rest of the month is `CALM`, and the banner announces the next event.
+
 ## Design direction (applies to everything new)
 
 The reference is the latest Boutique items: the rooms (`ROOMS`), the window views (`VIEWS`) and the "Mini ville". Every new or restyled element (shop items, decor, cosmetics, screens, effects) follows their look:
@@ -28,7 +43,7 @@ The reference is the latest Boutique items: the rooms (`ROOMS`), the window view
 
 - Run: open `index.html` directly in a browser (works from `file://`).
 - Syntax check: `node --check app.js`
-- There is no test suite. `app.js` ends with `console.assert` self-checks on pure helpers and data integrity (`missionsOf`, `fmt`, `fmtMin`, `levelOf`, collection size, unique achievement ids, egg odds summing to 1). They only show up in the browser console (see the console-errors command below). Add one when you add a pure helper or change data that has an invariant.
+- There is no test suite. `app.js` ends with `console.assert` self-checks on pure helpers and data integrity (`missionsOf`, `fmt`, `fmtMin`, `levelOf`, `eventOf`, `decayAfter`, collection size and companions per rarity, unique achievement ids, egg odds summing to 1, streak rewards). They only show up in the browser console (see the console-errors command below). Add one when you add a pure helper or change data that has an invariant.
 - Visual check (Windows, headless Edge):
   `"/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" --headless=new --disable-gpu --window-size=1200,1000 --virtual-time-budget=3000 --screenshot=<out.png> "file:///C:/Users/leomu/Desktop/Site-Pomodoro/index.html"`
   - Console errors: replace `--screenshot=…` with `--enable-logging=stderr --v=0 --dump-dom` and grep for `CONSOLE`.
@@ -39,20 +54,21 @@ The reference is the latest Boutique items: the rooms (`ROOMS`), the window view
 Single script, organised top to bottom:
 
 1. **Static game data**:
-   - `CFG` (every balancing value: gains, daily caps, friendship rules, streak threshold), `LEVELS` (friendship thresholds, levels 1–10), `PRESETS` (pomodoro rhythms). Tweak numbers there, never inline.
-   - `PLANTS`, `EVENTS` (one per day, chosen by `dayNum(date) % EVENTS.length`), `MISSION_POOL` (3 per day, picked deterministically by `missionsOf(date)`).
+   - `CFG` (every balancing value: gains, daily coin cap, friendship gain and decay, pause penalty, egg accelerator, event length, freezes), `LEVELS` (friendship thresholds, levels 1–10, 100 PA apart), `STREAK_REWARDS` (streak milestones), `PRESETS` (pomodoro rhythms). Tweak numbers there, never inline.
+   - `PLANTS`, `EVENTS` (one per month: `monthEvent(date)`; `eventOf(date)` returns it during the first `CFG.eventDays` days, else `CALM`), `MISSION_POOL` (3 per day, picked deterministically by `missionsOf(date)`).
    - `COSMETICS` (SVG snippets per slot: `tete`/`yeux`/`cou`; entries with `lock` are exclusives, never sold), `SPECIES`, `DECOR`.
-   - Collection: every `SPECIES` entry with a `rarity` is collectable (`COLL`, 12). `price` = adoptable for coins, `egg: false` = not in eggs. `story` holds 3 fragments unlocked at friendship levels 2/5/8.
-   - `EGGS` (price, minutes of study to hatch, rarity `odds`), `LEVEL_UNLOCKS` (what each friendship level gives: line + story/cosmetic/animation), `ACH` (achievements: `val()` vs `goal`, `reward` = coins/egg/pet/cos), `AMBIANCES`, `THEMES`.
+   - Collection: every `SPECIES` entry with a `rarity` is collectable (`COLL`, 25, sorted by `RARITY` order). `price` = adoptable for coins, `egg: false` = not in eggs. `story` holds 3 fragments unlocked at friendship levels 2/5/8.
+   - `RARITY` (6 tiers: commun, peuCommun, rare, epique, legendaire, mythique), `EGGS` (one per rarity, same key: price, minutes of study to hatch, `odds` = 100 % its own rarity), `LEVEL_UNLOCKS` (what each friendship level gives: line + story/cosmetic/animation), `ACH` (achievements: `val()` vs `goal`, `reward` = coins/egg/pet/cos), `AMBIANCES`, `THEMES`.
 2. **State `S`**:
    - All storage goes through `store.raw` / `store.set`, the only code that touches `localStorage`. To add a backend, replace those two functions.
    - One object persisted as JSON under the key `jardin`, loaded as `{...DEFAULT, ...saved}`. A new top-level key only needs a default in `DEFAULT`. `version` is there for future migrations.
    - On load, unknown ids (companions, cosmetics, decor, eggs, sounds, plants, theme) are filtered out. This protects against imported or old saves. Import (`importSave`) checks the shape before replacing the save and reloading.
    - No save at all (`firstRun`) opens the 3-step tutorial (`#tuto`), where the player picks a companion and their subjects.
    - Nested objects are *not* deep-merged, so when you change the shape of an existing nested key, add migration code (see the old `S.pet` to `S.names` migration).
-   - `S.day` holds the per-day counters used by missions and the daily caps (`pa`, `coins`). It resets when the date changes (`dayStats()`).
+   - `S.day` holds the per-day counters used by missions and the daily coin cap (`coins`). It resets when the date changes (`dayStats()`).
    - `S.sessions` logs every counted focus session (`date`, `sec`, `sub`, `goal`, `full`, `result`, `feel`). Stats for the week and month are computed from it.
-   - Friendship is per species in `S.friend` (PA). `applyDecay()` removes PA after `CFG.graceDays` days away from `S.lastStudy`, never below the current level's threshold. `S.streak` = `{cur, best, last}`.
+   - Friendship is per species in `S.friend` (PA). `applyDecay()` (on load and every 30 s) removes 25 % of the active companion's PA per full 15 h since `S.lastStudyAt` (ms); `S.decayed` counts the 15 h slices already applied and is reset by `credit()`. `S.lastStudy` (date) still drives the "back" greeting and the sad pet.
+   - `S.streak` = `{cur, best, last}`, advanced only by `checkIn()` (the `#streakBadge` button). `S.boosts` = egg accelerators in stock.
    - A corrupted save is copied to `localStorage['jardin_corrompu']` before being replaced by defaults.
 3. **Pets**:
    - Every species and the partner (Perle, the `pingouine` entry, which can't be adopted) shares one silhouette in `petSVG(species, equip)`. That is why every cosmetic fits every animal.
@@ -60,11 +76,12 @@ Single script, organised top to bottom:
    - Visual style is "doodle": a dark outline (`LINE`) applied through wrapping `<g stroke>` groups. Ears and back are drawn *before* the body so the body hides their bases.
 4. **Ambient audio**: everything is synthesised with WebAudio (noise buffers, filters, LFOs, a scheduled chord loop for lofi). There are no audio files. The context is created lazily; saved volumes are re-applied on the first `pointerdown` because of autoplay rules.
 5. **Coins**: every change goes through `addCoins(n, why)`, which feeds the history in `S.tx` (shown in Réglages). `earn()` is the capped variant used for study time.
-   **Earning (`credit(sec, full, subId)`)**: the only place where study time turns into rewards: coins (through `earn()`, capped per day), friendship (through `addPA()`, capped per day), subject minutes, plant growth, streak validation. Event multipliers apply. Partial minutes carry over in `S.carry`.
+   **Earning (`credit(sec, full, subId)`)**: the only place where study time turns into rewards: coins (through `earn()`, capped per day), friendship (through `addPA()`, 1 PA per minute), subject minutes, plant growth, egg incubation. Event multipliers apply. Partial minutes carry over in `S.carry`. The streak is not validated here (see `checkIn()`).
 6. **Timer `T`**:
    - It ticks with `Date.now()` deltas, so throttled background tabs stay accurate. `phaseEnd()` handles the pomodoro work/short/long cycle.
    - It is saved separately in `localStorage['jardin_timer']` on every tick. On load, a running countdown resumes and its first tick catches up the time spent closed. A running chrono is restored paused.
-   - `endFocus(full)` ends a focus session: under `CFG.minSession` minutes an abandoned session counts nothing. Otherwise it credits, logs to `S.sessions` and opens the `#debrief` dialog.
+   - `endFocus(full)` ends a focus session. It always credits the time (abandoning keeps what was earned). Under `CFG.minSession` minutes an abandoned session stops there; otherwise it logs to `S.sessions` and opens the `#debrief` dialog.
+   - Pomodoro: `T.count` counts finished pomodoros of the series; `phaseEnd()` stops the series at `S.cfg.rounds`, and abandoning resets it. Pauses during work are tracked in `T.pauseSec` / `T.pausedAt`, and `T.charged` holds the coins already taken by `chargePause()`. `setPhase()` resets all three.
    - The companion's dialogue comes from `LINES` through `say(kind)` (no consecutive repeat). Its animation state is `data-state` on `.pet.main`, from `petState()`.
 7. **Rendering**:
    - Each `render*()` rebuilds its section with `innerHTML`; `renderAll()` runs them all after every state change.

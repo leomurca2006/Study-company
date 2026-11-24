@@ -4,20 +4,22 @@ const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
 // ---------- Équilibrage (toutes les valeurs de gains, plafonds et seuils) ----------
 const CFG = {
-  minSession: 5,        // min : en dessous, une session abandonnée ne compte pas
+  minSession: 5,        // min : en dessous, une session abandonnée garde ses pièces mais n'entre pas dans l'historique
   chronoFull: 25,       // min : un chrono terminé compte comme session complète à partir de là
-  coinsFull: 10,        // pièces bonus par session complète
-  coinsPerStreakDay: 5, coinsStreakMax: 50,
+  coinsFull: 10,        // pièces bonus par session complète (sans abandon)
   coinsPerDay: 300,     // plafond de pièces gagnées en révisant, par jour
-  paFull: 10, paFirst: 5, paPerStreakDay: 3, paStreakMax: 30,
-  paPerDay: 100,        // plafond de points d'amitié par jour
-  graceDays: 2, decayPerDay: 5, // absence : -5 PA par jour après 2 jours de grâce
-  streakMin: 15,        // min de révision pour valider un jour de série
+  paPerMin: 1,          // 10 min de révision = 10 PA = 10 % d'un niveau d'amitié (100 PA)
+  decayHours: 15, decayRate: 0.25, // absence : -25 % des PA toutes les 15 h sans réviser
+  pauseFree: 10, pausePenalty: 1, // pause pendant le travail : au-delà de 10 min par session, -1 pièce par minute
+  boostPrice: 60, boostMin: 60, // accélérateur d'œuf : 60 pièces = 1 h de couvaison
+  eventDays: 7,         // un événement par mois, du 1er au 7
   freezeMax: 2, freezePrice: 150, // gels de série
   txMax: 200,           // lignes gardées dans l'historique des pièces
   examSoon: 14,         // jours : le compagnon parle de l'examen à partir de là
 };
-const LEVELS = [0, 50, 120, 220, 350, 520, 720, 950, 1200, 1500]; // PA cumulés pour atteindre les niveaux 1 à 10
+const LEVELS = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]; // PA cumulés pour atteindre les niveaux 1 à 10 (100 PA = 100 min par niveau)
+// Série = jours d'affilée où le joueur coche « Je suis là » ; récompenses quand la série atteint ces paliers
+const STREAK_REWARDS = { 7: { coins: 50 }, 14: { boost: 1 }, 30: { pet: 'hibou' }, 90: { coins: 500 } };
 const levelOf = pa => LEVELS.filter(x => pa >= x).length;
 const PRESETS = { classique: [25, 5, 15], long: [50, 10, 20], intense: [90, 20, 30] }; // travail, pause, grande pause
 
@@ -32,12 +34,12 @@ const PLANTS = {
   cerisier:   { name: 'Cerisier',   price: 90, grow: 200, reward: 240, stages: ['🌱', '🪴', '🌸'] },
 };
 
-// Un événement par jour, en rotation
+// Un événement par mois, qui dure une semaine (CFG.eventDays) ; le reste du mois, CALM
+const CALM = { icon: '🍃', name: 'Semaine calme', desc: 'Rien de spécial… parfait pour se concentrer.', calm: true };
 const EVENTS = [
   { icon: '🌧️', name: 'Pluie bienfaisante', desc: 'Tes plantes poussent 2× plus vite.', growMult: 2 },
   { icon: '🧺', name: 'Marché aux fleurs', desc: 'Toutes les graines sont à -50 %.', priceMult: 0.5 },
   { icon: '☀️', name: 'Soleil doré', desc: '+50 % de pièces par minute révisée.', coinMult: 1.5 },
-  { icon: '🍃', name: 'Journée calme', desc: 'Rien de spécial… parfait pour se concentrer.' },
   { icon: '🐝', name: 'Abeilles butineuses', desc: 'Les récoltes rapportent 2× plus.', harvestMult: 2 },
   { icon: '🌈', name: 'Arc-en-ciel', desc: 'Pièces ×1,5 et croissance ×1,5 !', coinMult: 1.5, growMult: 1.5 },
   { icon: '🌙', name: 'Nuit étoilée', desc: 'Les récompenses de missions sont doublées.', missionMult: 2 },
@@ -56,7 +58,8 @@ const MISSION_POOL = [
 
 const today = () => new Date().toLocaleDateString('sv'); // AAAA-MM-JJ, heure locale
 const dayNum = d => Math.floor(Date.parse(d) / 864e5);
-const eventOf = d => EVENTS[dayNum(d) % EVENTS.length];
+const monthEvent = d => { const [y, m] = d.split('-').map(Number); return EVENTS[(y * 12 + m) % EVENTS.length]; };
+const eventOf = d => +d.slice(8) <= CFG.eventDays ? monthEvent(d) : CALM;
 function missionsOf(d) { // 3 missions différentes, les mêmes toute la journée
   let n = dayNum(d); const pool = [...MISSION_POOL], out = [];
   for (let i = 0; i < 3; i++) { n = (n * 9301 + 49297) % 233280; out.push(pool.splice(n % pool.length, 1)[0]); }
@@ -83,8 +86,8 @@ const DEFAULT = {
   version: 1, // à incrémenter avec une migration quand la forme des données change
   coins: 15, inv: { marguerite: 1 }, plots: Array(9).fill(null),
   subjects: [{ id: 1, name: 'Maths', color: '#FF8FE6', min: 0 }],
-  carry: 0, totalMin: 0, cfg: { preset: 'classique', work: 25, short: 5, long: 15, libre: 45 }, day: null,
-  friend: {}, lastStudy: today(), decayed: 0, streak: { cur: 0, best: 0, last: null }, sessions: [], alertVol: 0.5,
+  carry: 0, totalMin: 0, cfg: { preset: 'classique', work: 25, short: 5, long: 15, libre: 45, rounds: 4 }, day: null,
+  friend: {}, lastStudy: today(), lastStudyAt: null, decayed: 0, boosts: 0, streak: { cur: 0, best: 0, last: null }, sessions: [], alertVol: 0.5,
   owned: [], equip: { tete: null, yeux: null, cou: null }, partnerEquip: { tete: null, yeux: null, cou: null },
   species: 'pingouin', pets: ['pingouin'], names: {}, partner: false,
   decor: { owned: ['etagere', 'plante', 'tapisLav'], on: ['etagere', 'plante', 'tapisLav'] },
@@ -106,7 +109,7 @@ const save = () => { // localStorage peut être plein ou indisponible (navigatio
 function dayStats() {
   const d = today();
   if (!S.day || S.day.date !== d) S.day = { date: d, minutes: 0, pomos: 0, subjects: [], harvests: 0, plants: 0, claimed: [] };
-  S.day.pa ??= 0; S.day.coins ??= 0; S.day.sessions ??= 0;
+  S.day.coins ??= 0; S.day.sessions ??= 0;
   return S.day;
 }
 
@@ -207,22 +210,104 @@ const SPECIES = {
     ears: '<path d="M76 66L70 34L90 60ZM124 66L130 34L110 60Z" fill="#fdeaa9"/>',
     belly: tummy('#fdeaa9') + '<path d="M72 150H128M66 166H134M72 182H128" stroke="#f3d47e" stroke-width="2.5"/>',
     face: '<circle cx="94" cy="116" r="2" fill="#2D1A62"/><circle cx="106" cy="116" r="2" fill="#2D1A62"/><path d="M90 124Q100 132 110 124" stroke="#2D1A62" stroke-width="2.5" fill="none" stroke-linecap="round"/>' },
+  souris: { name: 'Souris', dflt: 'Gruyère', rarity: 'commun', body: '#d6cfe0', feet: '#f9c9a0',
+    story: ['Gruyère habite derrière les étagères de la bibliothèque municipale.', 'La nuit, elle lit les livres que personne n\'emprunte, pour qu\'ils ne se sentent pas seuls.', 'Elle dit que les petits efforts, comme les petites souris, vont très loin.'],
+    back: '<path d="M150 192Q198 198 186 158" fill="none" stroke-width="4"/>',
+    ears: '<circle cx="56" cy="64" r="25" fill="#d6cfe0"/><circle cx="144" cy="64" r="25" fill="#d6cfe0"/><circle cx="56" cy="64" r="13" fill="#F4B5E8" stroke-width="2"/><circle cx="144" cy="64" r="13" fill="#F4B5E8" stroke-width="2"/>',
+    belly: tummy('#f6f1fa'),
+    face: '<ellipse cx="100" cy="115" rx="5" ry="4" fill="#FF8FE6" stroke="#2D1A62" stroke-width="2"/><path d="M60 112L76 114M60 120L76 118M140 112L124 114M140 120L124 118" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+  mouton: { name: 'Mouton', dflt: 'Nuage', rarity: 'peuCommun', body: '#fbf7ff', feet: '#5b5372',
+    story: ['Nuage compte les étudiants pour s\'endormir, au lieu de l\'inverse.', 'Sa laine est si douce qu\'on en fait des coussins pour les longues soirées de révision.', 'Il croit que tout s\'apprend en douceur, une boucle après l\'autre.'],
+    ears: '<ellipse cx="42" cy="98" rx="20" ry="9" transform="rotate(-20 42 98)" fill="#5b5372"/><ellipse cx="158" cy="98" rx="20" ry="9" transform="rotate(20 158 98)" fill="#5b5372"/>',
+    hair: '<g fill="#fbf7ff"><circle cx="84" cy="62" r="11"/><circle cx="100" cy="55" r="12"/><circle cx="116" cy="62" r="11"/></g>',
+    belly: '<ellipse cx="100" cy="112" rx="32" ry="26" fill="#E7CFF5"/>' + tummy('#fffdfd'),
+    face: '<path d="M94 116Q100 122 106 116" stroke="#2D1A62" stroke-width="2.5" fill="none" stroke-linecap="round"/>' },
+  cochon: { name: 'Cochon', dflt: 'Rosette', rarity: 'peuCommun', body: '#F4B5E8', feet: '#e48fc8',
+    story: ['Rosette adore se rouler dans… les fiches de révision bien rangées.', 'Elle a une tirelire en forme d\'humain, pour changer.', 'Son astuce : récompenser chaque chapitre fini par une petite fraise.'],
+    back: '<path d="M158 182q18 -2 14 -14q-4 -9 -11 -3q-5 6 6 9" fill="none" stroke-width="3"/>',
+    ears: '<path d="M56 86L58 48L90 66ZM144 86L142 48L110 66Z" fill="#F4B5E8"/>',
+    belly: tummy('#FBE9FF'),
+    face: '<ellipse cx="100" cy="121" rx="15" ry="10" fill="#FF8FE6" stroke="#2D1A62" stroke-width="2.5"/><circle cx="95" cy="121" r="2.5" fill="#2D1A62"/><circle cx="105" cy="121" r="2.5" fill="#2D1A62"/>' },
+  poussin: { name: 'Poussin', dflt: 'Citron', rarity: 'peuCommun', body: '#FFD99A', feet: '#FFC46B',
+    story: ['Citron est sorti de sa coquille un lundi matin, déjà prêt à apprendre.', 'Il pépie l\'alphabet à l\'envers pour impressionner ses amis.', 'Il trouve que chaque jour est une petite éclosion.'],
+    hair: '<path d="M100 58Q92 40 99 34Q103 46 108 38Q112 52 100 58Z" fill="#FFD99A"/>',
+    belly: tummy('#fff3d6'),
+    face: '<path d="M93 113L107 113L100 123Z" fill="#FFC46B" stroke="#2D1A62" stroke-width="2.5" stroke-linejoin="round"/>' },
+  chien: { name: 'Chien', dflt: 'Biscuit', rarity: 'peuCommun', body: '#e8c39e', feet: '#e8c39e',
+    story: ['Biscuit rapporte les stylos que tu fais tomber sous le bureau.', 'Il a suivi un cours d\'obéissance et a fini premier de sa promo.', 'Pour lui, réviser c\'est comme une balade : on y va tous les jours.'],
+    back: '<path d="M150 186Q184 178 180 148" fill="none" stroke-width="5"/>',
+    ears: '<ellipse cx="40" cy="104" rx="15" ry="32" transform="rotate(18 40 104)" fill="#a87a5a"/><ellipse cx="160" cy="104" rx="15" ry="32" transform="rotate(-18 160 104)" fill="#a87a5a"/>',
+    belly: tummy('#fbeedd'),
+    face: '<ellipse cx="100" cy="116" rx="6" ry="4.5" fill="#2D1A62"/><path d="M100 120V125M93 127Q100 132 107 127" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M97 129Q100 137 103 129Z" fill="#FF8FE6" stroke="#2D1A62" stroke-width="1.5"/>' },
+  abeille: { name: 'Abeille', dflt: 'Miel', rarity: 'peuCommun', body: '#FFD99A', feet: '#2D1A62',
+    story: ['Miel butine les fleurs du jardin et les idées de tes cahiers.', 'Elle connaît une danse pour dire où trouver les meilleures formules.', 'Sa devise : travailler ensemble, c\'est plus sucré.'],
+    back: '<ellipse cx="38" cy="116" rx="26" ry="15" transform="rotate(-30 38 116)" fill="#D9F7FF"/><ellipse cx="162" cy="116" rx="26" ry="15" transform="rotate(30 162 116)" fill="#D9F7FF"/>',
+    ears: '<path d="M86 60Q78 36 66 34M114 60Q122 36 134 34" fill="none" stroke-width="3"/><circle cx="66" cy="34" r="6" fill="#2D1A62"/><circle cx="134" cy="34" r="6" fill="#2D1A62"/>',
+    belly: '<path d="M44 150Q100 162 156 150L158 166Q100 178 42 166Z" fill="#2D1A62" stroke="none"/><path d="M50 184Q100 196 150 184L144 196Q100 208 56 196Z" fill="#2D1A62" stroke="none"/>',
+    face: '<path d="M90 118Q100 126 110 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
+  loutre: { name: 'Loutre', dflt: 'Galet', rarity: 'epique', body: '#b08a6e', feet: '#8e6a52',
+    story: ['Galet garde toujours son caillou préféré dans sa poche de fourrure.', 'Il fait la planche sur la rivière en relisant ses notes.', 'Il te tient la main quand les révisions font des vagues.'],
+    back: '<path d="M146 190Q192 196 190 168Q170 184 148 178Z" fill="#b08a6e"/>',
+    ears: '<circle cx="64" cy="70" r="10" fill="#b08a6e"/><circle cx="136" cy="70" r="10" fill="#b08a6e"/>',
+    belly: tummy('#f2e1cc'),
+    face: '<ellipse cx="100" cy="121" rx="18" ry="12" fill="#f2e1cc" stroke="#2D1A62" stroke-width="2.5"/><ellipse cx="100" cy="116" rx="6" ry="4" fill="#2D1A62"/><path d="M66 118L80 120M66 126L80 124M134 118L120 120M134 126L120 124" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+  raton: { name: 'Raton laveur', dflt: 'Filou', rarity: 'epique', body: '#a9a3b8', feet: '#5b5372',
+    story: ['Filou lave soigneusement chaque idée avant de la ranger dans sa tête.', 'Son masque n\'est pas pour se cacher : c\'est pour réviser incognito.', 'Il ne vole qu\'une chose : les minutes perdues, pour te les rendre.'],
+    back: '<path d="M142 192Q194 200 190 156L176 162Q178 184 146 180Z" fill="#a9a3b8"/><path d="M178 166L190 164M176 180L190 182" stroke-width="5"/>',
+    ears: '<path d="M54 92L58 46L92 66ZM146 92L142 46L108 66Z" fill="#a9a3b8"/><path d="M62 80L64 58L80 68ZM138 80L136 58L120 68Z" fill="#5b5372" stroke-width="2"/>',
+    belly: tummy('#ecebf1') + '<path d="M62 102Q84 86 100 100Q116 86 138 102Q130 116 116 113Q100 106 84 113Q70 116 62 102Z" fill="#4B1A72" stroke="none"/>',
+    face: '<circle cx="85.5" cy="102.5" r="1.8" fill="#fff"/><circle cx="117.5" cy="102.5" r="1.8" fill="#fff"/><ellipse cx="100" cy="120" rx="5" ry="3.5" fill="#2D1A62"/><path d="M100 123Q96 129 91 126M100 123Q104 129 109 126" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+  licorne: { name: 'Licorne', dflt: 'Opaline', rarity: 'legendaire', body: '#FBE9FF', feet: '#E7CFF5',
+    story: ['Opaline est née au bout d\'un arc-en-ciel, entre deux nuages de craie.', 'Sa corne s\'allume doucement quand quelqu\'un comprend enfin un exercice.', 'Elle n\'apparaît qu\'à ceux qui croient en leurs rêves… et en leurs fiches.'],
+    ears: '<path d="M60 86L60 50L88 66ZM140 86L140 50L112 66Z" fill="#FBE9FF"/>',
+    hair: '<path d="M94 60L100 20L106 60Z" fill="#FFD99A"/><path d="M96 48L104 44M95 55L105 51" stroke="#FFC46B" stroke-width="2"/><path d="M114 58Q140 50 142 74Q152 72 154 88Q138 86 130 76Z" fill="#FF8FE6"/>',
+    belly: tummy('#fff7fd'),
+    face: '<path d="M90 120Q100 128 110 120" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
+  phenix: { name: 'Phénix', dflt: 'Étincelle', rarity: 'legendaire', body: '#FFC46B', feet: '#FF8FE6',
+    story: ['Étincelle renaît de ses cendres, et toi de tes mauvaises notes.', 'Ses plumes réchauffent la chambre les soirs d\'hiver.', 'Il sait qu\'un échec n\'est qu\'un nouveau départ, plus fort.'],
+    back: '<path d="M48 112Q2 68 10 138Q26 124 40 144Z" fill="#FF8FE6"/><path d="M152 112Q198 68 190 138Q174 124 160 144Z" fill="#FF8FE6"/><path d="M140 196Q186 206 196 176Q178 182 168 172Q162 190 140 186Z" fill="#FF4FD8"/>',
+    hair: '<path d="M92 58Q84 34 95 26Q98 42 104 30Q114 44 108 58Z" fill="#FF8FE6"/>',
+    belly: tummy('#FFD99A'),
+    face: '<path d="M94 115L106 115L100 127Z" fill="#FFD99A" stroke="#2D1A62" stroke-width="2.5" stroke-linejoin="round"/>' },
+  kitsune: { name: 'Kitsune', dflt: 'Lumen', rarity: 'mythique', body: '#FBE9FF', feet: '#BFF6FF',
+    story: ['Lumen est un esprit-renard qui veille sur les lanternes des bibliothèques.', 'Chaque queue représente cent ans de sagesse… et elle en a déjà trois.', 'Elle te prête un peu de sa lumière quand tes yeux fatiguent.'],
+    back: '<g fill="#FBE9FF"><path d="M140 196Q200 196 194 140Q184 120 168 144Q166 180 140 186Z"/><path d="M140 196Q206 176 182 120Q168 104 160 132Q170 170 140 186Z" transform="rotate(-24 150 190)"/></g><path d="M194 140Q184 120 172 136Q182 142 194 140Z" fill="#4FE3FF" stroke-width="2.5"/>',
+    ears: '<path d="M52 96L52 32L96 64ZM148 96L148 32L104 64Z" fill="#FBE9FF"/><path d="M58 80L58 46L80 62ZM142 80L142 46L120 62Z" fill="#8FF0FF" stroke-width="2"/>',
+    belly: tummy('#ffffff'),
+    face: '<path d="M74 92L66 86M126 92L134 86" stroke="#FF4FD8" stroke-width="3" stroke-linecap="round"/><ellipse cx="100" cy="116" rx="5" ry="3.5" fill="#2D1A62"/><path d="M100 119Q96 125 91 122M100 119Q104 125 109 122" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+  nebuleuse: { name: 'Chat cosmique', dflt: 'Nébuleuse', rarity: 'mythique', body: '#4B1A72', feet: '#7A2380',
+    story: ['Nébuleuse est tombée d\'une étoile filante, un soir de grande révision.', 'Elle ronronne à la fréquence exacte de la concentration.', 'Dans sa fourrure, on peut voir toutes les constellations que tu as apprises.'],
+    back: '<path d="M140 190Q190 194 184 146Q182 130 170 134Q174 172 138 176Z" fill="#4B1A72"/>',
+    ears: '<path d="M52 96L56 40L96 64ZM148 96L144 40L104 64Z" fill="#4B1A72"/><path d="M62 84L63 56L84 68ZM138 84L137 56L116 68Z" fill="#FF4FD8"/>',
+    belly: tummy('#7A2380') + `<path d="${star(82, 158, 6)}" fill="#FFD99A" stroke="none"/><path d="${star(116, 176, 5)}" fill="#FFD99A" stroke="none"/><circle cx="104" cy="148" r="2" fill="#BFF6FF" stroke="none"/><circle cx="88" cy="186" r="2" fill="#BFF6FF" stroke="none"/>`,
+    face: '<circle cx="84" cy="104" r="7" fill="#4FE3FF"/><circle cx="116" cy="104" r="7" fill="#4FE3FF"/><circle cx="84" cy="104" r="3.5" fill="#110927"/><circle cx="116" cy="104" r="3.5" fill="#110927"/><path d="M96 113H104L100 118Z" fill="#FF8FE6"/><path d="M100 118Q96 124 91 121M100 118Q104 124 109 121M56 111L74 114M56 121L74 118M144 111L126 114M144 121L126 118" stroke="#D9BDEE" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+  sylve: { name: 'Esprit du jardin', dflt: 'Sylve', rarity: 'mythique', body: '#BFF6FF', feet: '#8FF0FF',
+    story: ['Sylve est née de la première graine que tu as plantée.', 'Chaque minute de révision fait pousser une nouvelle feuille sur sa tête.', 'Le jour où ton jardin sera plein, elle fleurira en entier.'],
+    back: '<circle cx="30" cy="84" r="7" fill="#FFD99A"/><circle cx="172" cy="66" r="5" fill="#FFD99A"/><circle cx="182" cy="110" r="4" fill="#FFD99A"/>',
+    hair: '<path d="M100 58V40" fill="none" stroke-width="3"/><path d="M100 44Q84 30 76 40Q88 50 100 44Z" fill="#a8d89a"/><path d="M100 40Q116 24 126 34Q112 46 100 40Z" fill="#a8d89a"/>',
+    belly: tummy('#eafcff') + flowers([[100, 166]]),
+    face: '<path d="M90 118Q100 126 110 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
   // la petite amie du pingouin (pas adoptable, se débloque à part)
   pingouine: { name: 'Pingouine', dflt: 'Perle', body: '#cbbde6', feet: '#f9c9a0', belly: pengBelly,
     face: beak + '<path d="M78 100L74 96M81 98L79 93M122 100L126 96M119 98L121 93" stroke="#3b3550" stroke-width="2.2" stroke-linecap="round"/>',
     hair: '<g transform="translate(128 68)" fill="#f9cdd9" stroke="#2D1A62" stroke-width="2.5"><circle cx="-7" r="7"/><circle cx="7" r="7"/><circle cy="-7" r="7"/><circle cy="7" r="7"/><circle r="5" fill="#fde49a"/></g>' },
 };
 const PARTNER_PRICE = 250;
-const COLL = Object.keys(SPECIES).filter(k => SPECIES[k].rarity); // la collection (sans Perle)
 const RARITY = {
-  commun: { name: 'Commun', color: '#BFF6FF' }, rare: { name: 'Rare', color: '#4FE3FF' },
-  epique: { name: 'Épique', color: '#FF4FD8' }, legendaire: { name: 'Légendaire', color: '#FFC46B' },
+  commun: { name: 'Commun', color: '#D9F7FF' }, peuCommun: { name: 'Peu commun', color: '#8FF0FF' }, rare: { name: 'Rare', color: '#4FE3FF' },
+  epique: { name: 'Épique', color: '#FF4FD8' }, legendaire: { name: 'Légendaire', color: '#FFC46B' }, mythique: { name: 'Mythique', color: '#FF8FE6' },
 };
-// Un œuf éclot après min minutes de révision ; odds = probabilité de chaque rareté
+const RARITY_KEYS = Object.keys(RARITY);
+const COLL = Object.keys(SPECIES).filter(k => SPECIES[k].rarity) // la collection (sans Perle), rangée par rareté
+  .sort((a, b) => RARITY_KEYS.indexOf(SPECIES[a].rarity) - RARITY_KEYS.indexOf(SPECIES[b].rarity));
+// Un œuf par rareté : il éclot après min minutes de révision (cumulées sur tous les œufs à la fois) et donne un compagnon de cette rareté
 const EGGS = {
-  commun: { name: 'Œuf commun', price: 150, min: 120, color: '#D9F7FF', odds: { commun: 0.7, rare: 0.25, epique: 0.05 } },
-  rare: { name: 'Œuf rare', price: 350, min: 300, color: '#BFF6FF', odds: { rare: 0.7, epique: 0.25, legendaire: 0.05 } },
-  epique: { name: 'Œuf épique', price: 600, min: 480, color: '#FFB8EE', odds: { epique: 0.8, legendaire: 0.2 } },
+  commun:     { name: 'Œuf commun',     price: 100, min: 180,  color: RARITY.commun.color,     odds: { commun: 1 } },
+  peuCommun:  { name: 'Œuf peu commun', price: 180, min: 360,  color: RARITY.peuCommun.color,  odds: { peuCommun: 1 } },
+  rare:       { name: 'Œuf rare',       price: 300, min: 600,  color: RARITY.rare.color,       odds: { rare: 1 } },
+  epique:     { name: 'Œuf épique',     price: 450, min: 900,  color: RARITY.epique.color,     odds: { epique: 1 } },
+  legendaire: { name: 'Œuf légendaire', price: 650, min: 1200, color: RARITY.legendaire.color, odds: { legendaire: 1 } },
+  mythique:   { name: 'Œuf mythique',   price: 900, min: 1440, color: RARITY.mythique.color,   odds: { mythique: 1 } },
 };
 // Chaque niveau d'amitié ajoute une réplique, et un souvenir (histoire), un accessoire ou une animation
 const LEVEL_UNLOCKS = {
@@ -263,21 +348,23 @@ const petsHTML = (sp = S.species, partner = S.partner, eqMain = S.equip, eqPartn
 
 // ---------- Amitié (points d'amitié = PA, par compagnon) ----------
 const absentDays = () => dayNum(today()) - dayNum(S.lastStudy);
-function addPA(n) { // respecte le plafond quotidien, annonce les nouveaux niveaux
-  const d = dayStats(), sp = S.species, pa = S.friend[sp] || 0;
-  n = Math.max(0, Math.min(n, CFG.paPerDay - d.pa));
-  d.pa += n; S.friend[sp] = pa + n;
+function addPA(n) { // annonce les nouveaux niveaux
+  const sp = S.species, pa = S.friend[sp] || 0;
+  n = Math.max(0, n); S.friend[sp] = pa + n;
   const lv = levelOf(pa + n);
   if (lv > levelOf(pa)) { say('level'); toast(`💗 Niveau ${lv} d'amitié avec ${nameOf(sp)} ! Débloqué : ${unlockText(LEVEL_UNLOCKS[lv])}`); }
   return n;
 }
-function applyDecay() { // baisse douce, jamais sous le palier déjà atteint
-  const due = Math.max(0, absentDays() - 1 - CFG.graceDays) - S.decayed;
-  if (due <= 0) return;
+// -25 % des PA du compagnon actif par tranche de 15 h sans réviser (S.decayed = tranches déjà retirées)
+const decayAfter = (pa, n) => Math.floor(pa * (1 - CFG.decayRate) ** n);
+function applyDecay() {
+  const due = Math.floor((Date.now() - S.lastStudyAt) / (CFG.decayHours * 36e5)) - S.decayed;
+  if (!(due > 0)) return false;
   S.decayed += due;
   const pa = S.friend[S.species] || 0;
-  S.friend[S.species] = Math.max(LEVELS[levelOf(pa) - 1], pa - due * CFG.decayPerDay);
-  save();
+  S.friend[S.species] = decayAfter(pa, due);
+  if (pa) toast(`💔 ${nameOf(S.species)} se sentait seul : l'amitié a baissé de ${pa - S.friend[S.species]} PA. Une session et ça repart !`);
+  save(); return true;
 }
 const daysTo = d => dayNum(d) - dayNum(today());
 const subName = id => S.subjects.find(s => s.id === id)?.name || 'Sans matière';
@@ -286,7 +373,9 @@ const curStreak = () => S.streak.last && dayNum(today()) - dayNum(S.streak.last)
 
 // Répliques : au moins 5 par situation, {n} = nom du compagnon, {p} = nom de Perle
 const LINES = {
-  idle: ['Coucou, c\'est {n} !', 'On révise ensemble ? 📚', 'Tu vas tout déchirer 💪', 'Une petite tisane et on s\'y remet 🍵',
+  hello: ['Bienvenue ! Je suis tellement content de te voir 🌷', 'Coucou ! Prêt·e pour une belle session ? ✨', 'Te voilà ! J\'avais gardé ton livre au chaud 📚',
+    'Bonjour toi ! On fait pousser le jardin aujourd\'hui ? 🌱', 'Bienvenue au jardin ! Installe-toi, je prépare le thé 🍵'],
+  idle:['Coucou, c\'est {n} !', 'On révise ensemble ? 📚', 'Tu vas tout déchirer 💪', 'Une petite tisane et on s\'y remet 🍵',
     'N\'oublie pas d\'arroser le jardin 🌷', 'J\'aime bien quand il pleut dehors 🌧️', 'Chaque minute compte ✨'],
   partner: ['{p} est trop fière de toi 💕', '{p} et moi, on t\'encourage !'],
   start: ['C\'est parti ! Je révise avec toi 📚', 'On se concentre ensemble, tu vas gérer ✨', 'Je sors mon livre aussi, allez !',
@@ -502,22 +591,38 @@ const ACH = [
   { id: 'night', icon: '🌙', name: 'Oiseau de nuit', desc: 'Finir une session après 22 h', val: () => +S.sessions.some(s => new Date(s.at).getHours() >= 22), goal: 1, reward: { coins: 40 } },
   { id: 'subj5', icon: '🎨', name: 'Curiosité', desc: 'Réviser 5 matières différentes', val: () => S.subjects.filter(s => s.min > 0).length, goal: 5, reward: { coins: 50 } },
   { id: 'streak3', icon: '🔥', name: 'Ça chauffe', desc: 'Série de 3 jours', val: () => S.streak.best, goal: 3, reward: { coins: 30 } },
-  { id: 'streak7', icon: '🦉', name: 'Une semaine entière', desc: 'Série de 7 jours', val: () => S.streak.best, goal: 7, reward: { pet: 'hibou' } },
+  { id: 'streak7', icon: '📆', name: 'Une semaine entière', desc: 'Série de 7 jours', val: () => S.streak.best, goal: 7, reward: { egg: 'commun' } },
   { id: 'streak30', icon: '🌟', name: 'Un mois de constance', desc: 'Série de 30 jours', val: () => S.streak.best, goal: 30, reward: { cos: 'colEtoile' } },
   { id: 'hatch1', icon: '🐣', name: 'Première éclosion', desc: 'Faire éclore un œuf', val: () => S.hatched, goal: 1, reward: { coins: 30 } },
   { id: 'coll6', icon: '🗂️', name: 'Mi-collection', desc: 'Réunir 6 compagnons', val: () => S.pets.length, goal: 6, reward: { egg: 'rare' } },
-  { id: 'coll12', icon: '💯', name: 'Collection complète', desc: 'Réunir les 12 compagnons', val: () => S.pets.length, goal: 12, reward: { cos: 'arcEnCiel' } },
+  { id: 'coll12', icon: '💯', name: 'Collection complète', desc: `Réunir les ${COLL.length} compagnons`, val: () => S.pets.length, goal: COLL.length, reward: { cos: 'arcEnCiel' } },
   { id: 'friend5', icon: '💗', name: 'Grands amis', desc: "Atteindre le niveau 5 d'amitié", val: maxLevel, goal: 5, reward: { coins: 80 } },
   { id: 'friend10', icon: '💞', name: 'Amis pour la vie', desc: "Atteindre le niveau 10 d'amitié", val: maxLevel, goal: 10, reward: { egg: 'epique' } },
   { id: 'harvest', icon: '🌷', name: 'Main verte', desc: 'Récolter 10 plantes', val: () => S.harvested, goal: 10, reward: { coins: 40 } },
   { id: 'shop', icon: '🛍️', name: 'Première emplette', desc: 'Acheter un objet en boutique', val: () => S.bought, goal: 1, reward: { coins: 20 } },
 ];
-const rewardText = r => r.coins ? `${r.coins} 🪙` : r.egg ? EGGS[r.egg].name : r.pet ? `Compagnon : ${SPECIES[r.pet].name}` : `Accessoire : ${COSMETICS[r.cos].name}`;
+const rewardText = r => r.coins ? `${r.coins} 🪙` : r.egg ? EGGS[r.egg].name : r.boost ? `${r.boost} accélérateur d'œuf ⚡` : r.pet ? `Compagnon exclusif : ${SPECIES[r.pet].name}` : `Accessoire : ${COSMETICS[r.cos].name}`;
 function grant(r, why) {
   if (r.coins) addCoins(r.coins, why);
   if (r.egg) S.eggs.push({ type: r.egg, min: 0 });
-  if (r.pet && !S.pets.includes(r.pet)) S.pets.push(r.pet);
+  if (r.boost) S.boosts += r.boost;
+  if (r.pet) S.pets.includes(r.pet) ? addCoins(150, `${why} (compagnon déjà là)`) : S.pets.push(r.pet);
   if (r.cos && !S.owned.includes(r.cos)) S.owned.push(r.cos);
+}
+// Série : le joueur coche « Je suis là » une fois par jour ; les gels de série couvrent les jours manqués
+function checkIn() {
+  const st = S.streak;
+  if (st.last === today()) return;
+  const missed = st.last ? dayNum(today()) - dayNum(st.last) - 1 : Infinity;
+  if (missed <= S.freezes) {
+    S.freezes -= missed; st.cur++;
+    if (missed) toast(`🧊 Gel de série utilisé (${missed}) : ta série continue !`);
+  } else st.cur = 1;
+  st.last = today(); st.best = Math.max(st.best, st.cur);
+  const r = STREAK_REWARDS[st.cur];
+  if (r) { grant(r, `Série de ${st.cur} jours`); toast(`🔥 ${st.cur} jours de série ! 🎁 ${rewardText(r)}`); }
+  else toast(`🔥 Journée validée : ${st.cur} j de série`);
+  save(); renderAll();
 }
 function checkAch() { // appelé à chaque rendu : débloque succès et accessoires d'amitié
   const lv = maxLevel(), before = S.ach.length + S.owned.length;
@@ -811,31 +916,20 @@ function credit(sec, full, subId) { // full : session complète (bonus)
   const m = Math.floor(S.carry / 60);
   S.carry -= m * 60;
   const ev = eventOf(today()), d = dayStats(), sub = S.subjects.find(s => s.id == subId);
-  let coins = earn(m * (ev.coinMult || 1) + (full ? CFG.coinsFull : 0), full ? 'Session complète' : 'Révision');
-  let pa = addPA((full ? CFG.paFull : 0) + (d.sessions ? 0 : CFG.paFirst));
+  const coins = earn(m * (ev.coinMult || 1) + (full ? CFG.coinsFull : 0), full ? 'Session complète' : 'Révision');
+  const pa = addPA(m * CFG.paPerMin);
   d.sessions++; S.totalMin += m; d.minutes += m;
-  S.lastStudy = today(); S.decayed = 0;
+  S.lastStudy = today(); S.lastStudyAt = Date.now(); S.decayed = 0;
   if (sub) { sub.min += m; if (!d.subjects.includes(sub.id)) d.subjects.push(sub.id); }
   S.plots.forEach(p => p && (p.g += m * (ev.growMult || 1)));
   S.eggs.forEach(e => e.min += m);
-  if (!d.streakDone && d.minutes >= CFG.streakMin) { // jour de série validé
-    d.streakDone = true;
-    const st = S.streak;
-    const missed = st.last ? dayNum(today()) - dayNum(st.last) - 1 : Infinity; // jours sans révision depuis le dernier jour validé
-    if (missed <= S.freezes) {
-      S.freezes -= missed; st.cur++;
-      if (missed) toast(`🧊 Gel de série utilisé (${missed}) : ta série continue !`);
-    } else st.cur = 1;
-    st.last = today(); st.best = Math.max(st.best, st.cur);
-    coins += earn(Math.min(st.cur * CFG.coinsPerStreakDay, CFG.coinsStreakMax), `Bonus de série (${st.cur} j)`);
-    pa += addPA(Math.min(st.cur * CFG.paPerStreakDay, CFG.paStreakMax));
-  }
-  toast(`+${m} min révisées · +${coins} 🪙${pa ? ` · +${pa} 💗` : ''}${d.coins >= CFG.coinsPerDay ? ' (plafond du jour atteint)' : ''}`);
+  if (m) toast(`+${m} min révisées · +${coins} 🪙${pa ? ` · +${pa} 💗` : ''}${d.coins >= CFG.coinsPerDay ? ' (plafond du jour atteint)' : ''}`);
 }
 
 // ---------- Minuteur ----------
 // État sauvegardé à part (clé 'jardin_timer') pour survivre à un rechargement de page.
-const T = { mode: 'pomodoro', phase: 'work', running: false, started: false, left: 0, total: 0, elapsed: 0, pending: 0, count: 0, last: 0, id: null, sub: '', goal: '', midSaid: false };
+const T = { mode: 'pomodoro', phase: 'work', running: false, started: false, left: 0, total: 0, elapsed: 0, pending: 0, count: 0, last: 0, id: null, sub: '', goal: '', midSaid: false,
+  pauseSec: 0, pausedAt: 0, charged: 0 }; // pauses prises pendant le travail de la session, et pièces déjà retirées pour elles
 const PHASE_LABEL = { work: 'Concentration', short: 'Petite pause', long: 'Grande pause' };
 const saveTimer = () => store.set('jardin_timer', JSON.stringify({ ...T, id: null }));
 const minutesOf = p => { // durée d'une phase selon le rythme choisi
@@ -847,11 +941,19 @@ const minutesOf = p => { // durée d'une phase selon le rythme choisi
 function setPhase(p) {
   T.phase = p; T.started = false;
   T.total = T.mode === 'chrono' ? 0 : 60 * minutesOf(p);
-  T.left = T.total; T.elapsed = 0;
+  T.left = T.total; T.elapsed = 0; T.pauseSec = T.pausedAt = T.charged = 0;
   saveTimer(); renderTimer();
+}
+const pauseTotal = () => T.pauseSec + (T.pausedAt ? (Date.now() - T.pausedAt) / 1000 : 0); // secondes de pause dans cette session de travail
+function chargePause() { // au-delà de CFG.pauseFree min de pause dans la session : -1 pièce par minute, retirée au fil de l'eau
+  const due = Math.floor(pauseTotal() / 60 - CFG.pauseFree) * CFG.pausePenalty - T.charged;
+  if (!(due > 0)) return;
+  T.charged += due; addCoins(-Math.min(due, S.coins), 'Pause trop longue');
+  toast(`⏸️ Pause de plus de ${CFG.pauseFree} min : -${due} 🪙`); saveTimer(); save(); renderHeader();
 }
 function start() {
   if (T.running) return pause();
+  if (T.pausedAt) { chargePause(); T.pauseSec = pauseTotal(); T.pausedAt = 0; }
   if (!T.started) {
     if (T.phase === 'work') { T.sub = $('#subjectSelect').value; T.goal = $('#goalInput').value.trim(); T.midSaid = false; }
     say(T.phase === 'work' ? 'start' : 'pause');
@@ -861,7 +963,10 @@ function start() {
   T.id = setInterval(tick, 250);
   saveTimer(); renderAll();
 }
-function pause() { T.running = false; clearInterval(T.id); saveTimer(); renderTimer(); }
+function pause() {
+  if (T.running && T.phase === 'work') T.pausedAt = Date.now();
+  T.running = false; clearInterval(T.id); saveTimer(); renderTimer();
+}
 function tick() {
   const now = Date.now(); let dt = (now - T.last) / 1000; T.last = now; // Date.now : reste juste même si l'onglet est en arrière-plan
   if (T.mode !== 'chrono') dt = Math.min(dt, T.left);
@@ -878,15 +983,19 @@ function phaseEnd() {
   pause(); beep();
   if (T.phase === 'work') {
     endFocus(true);
-    if (T.mode === 'pomodoro') { T.count++; dayStats().pomos++; setPhase(T.count % 4 ? 'short' : 'long'); }
-    else setPhase('work');
+    if (T.mode !== 'pomodoro') setPhase('work');
+    else if (++T.count >= S.cfg.rounds) { // tous les pomodoros choisis sont faits : la série s'arrête là
+      dayStats().pomos++; T.count = 0; setPhase('work');
+      toast(`🎉 Tes ${S.cfg.rounds} pomodoros sont terminés, bravo !`);
+    } else { dayStats().pomos++; setPhase(T.count % 4 ? 'short' : 'long'); }
     notify('Session terminée ! Pause bien méritée 🌼');
   } else { setPhase('work'); notify('Fin de la pause. On s\'y remet quand tu veux 🍅'); }
   save(); renderAll();
 }
 // Abandonner (travail), Terminer (chrono) ou Passer la pause
 function finish() {
-  pause();
+  pause(); chargePause();
+  if (T.mode === 'pomodoro' && T.phase === 'work' && T.started) T.count = 0; // abandonner repart sur une nouvelle série
   if (T.phase === 'work' && T.pending > 0) endFocus(T.mode === 'chrono' && T.pending >= CFG.chronoFull * 60);
   setPhase('work'); save(); renderAll();
 }
@@ -894,8 +1003,8 @@ let happyUntil = 0;
 function endFocus(full) { // fin d'une session de concentration : gains, historique, bilan
   const sec = T.pending; T.pending = 0;
   const long = sec >= CFG.minSession * 60;
-  if (!full && !long) return toast('Moins de 5 min : cette session ne compte pas. Pas grave, on recommence quand tu veux 🌱');
-  credit(sec, full && long, T.sub);
+  credit(sec, full && long, T.sub); // abandonner garde toujours ce qui a été gagné
+  if (!full && !long) return; // trop court pour l'historique et le bilan
   S.sessions.push({ at: Date.now(), date: today(), sec: Math.round(sec), sub: +T.sub || null, goal: T.goal, full, result: null, feel: null });
   $('#goalInput').value = '';
   happyUntil = Date.now() + 8000; say('end'); openDebrief();
@@ -941,14 +1050,18 @@ function renderTimer() {
   const shown = chrono ? T.elapsed : T.left;
   const ratio = chrono ? (T.elapsed % 3600) / 3600 : 1 - T.left / (T.total || 1);
   $('#time').textContent = fmt(shown);
-  $('#phase').textContent = chrono ? 'Chronomètre' : PHASE_LABEL[T.phase];
+  const pausing = T.phase === 'work' && T.started && !T.running;
+  $('#phase').textContent = (chrono ? 'Chronomètre' : T.mode === 'pomodoro' && T.phase === 'work' ? `Pomodoro ${T.count + 1} / ${S.cfg.rounds}` : PHASE_LABEL[T.phase])
+    + (pausing ? ` · pause ${Math.floor(pauseTotal() / 60)} / ${CFG.pauseFree} min` : '');
   $('#tbar').style.width = `${ratio * 100}%`;
   $('#tbar').parentElement.setAttribute('aria-valuenow', Math.round(ratio * 100));
   $('#tbar').parentElement.classList.toggle('break', T.phase !== 'work');
   const studying = T.running && T.phase === 'work';
   $$('.pet.main').forEach(p => p.dataset.state = petState());
   const st = curStreak();
-  $('#streakBadge').textContent = st ? `🔥 ${st} j de série` : '🌱 Pas encore de série';
+  const done = S.streak.last === today();
+  $('#streakBadge').textContent = done ? `🔥 ${st} j de série ✓` : `☑️ Je suis là aujourd'hui${st ? ` · 🔥 ${st} j` : ''}`;
+  $('#streakBadge').classList.toggle('todo', !done);
   $('#bubble').textContent = studying && Date.now() - bubbleAt > 10000 ? '' : bubble; // pendant le travail, la bulle s'efface vite
   $('#startBtn').textContent = T.running ? 'Pause' : T.started ? 'Reprendre' : 'Démarrer';
   $('#stopBtn').textContent = T.phase !== 'work' ? 'Passer la pause' : chrono ? 'Terminer' : 'Abandonner';
@@ -983,8 +1096,10 @@ function renderHeader() {
   Object.keys(THEMES).forEach(t => document.body.classList.toggle(`theme-${t}`, (tryTheme || S.theme) === t));
   $('#nightBtn').textContent = S.night ? '☀️' : '🌙';
   $('#nightBtn2').textContent = S.night ? '☀️ Passer en mode jour' : '🌙 Passer en mode nuit';
-  const ev = eventOf(today());
-  $('#eventBanner').textContent = `${ev.icon} Événement du jour : ${ev.name} — ${ev.desc}`;
+  const ev = eventOf(today()), mois = d => new Date(d + 'T12:00').toLocaleDateString('fr', { month: 'long' });
+  const next = dayOffset(32 - +today().slice(8)).slice(0, 8) + '01', nx = monthEvent(next); // 1er du mois suivant
+  $('#eventBanner').textContent = ev.calm ? `${CALM.icon} Pas d'événement en ce moment. Prochain : ${nx.icon} ${nx.name}, du 1er au ${CFG.eventDays} ${mois(next)}`
+    : `${ev.icon} Événement de la semaine : ${ev.name} — ${ev.desc} (jusqu'au ${CFG.eventDays} ${mois(today())})`;
 }
 
 function renderStudy() {
@@ -1148,7 +1263,8 @@ function renderTuto() {
     `<h2 id="tutoTitle">🌷 Bienvenue au Jardin d'Étude</h2>
       <p>Ici, tu révises avec un minuteur et un petit compagnon qui t'encourage.</p>
       <p>⏱️ Chaque minute de révision rapporte des pièces 🪙, fait pousser ton jardin et renforce votre amitié 💗.</p>
-      <p>🌱 Aucune pression : si tu fais une pause de quelques jours, ton compagnon t'attend, tout simplement.</p>`,
+      <p>💗 10 min de révision = 10 % d'un niveau d'amitié. Mais attention : après ${CFG.decayHours} h sans réviser, ton compagnon perd ${CFG.decayRate * 100} % de son amitié.</p>
+      <p>🔥 Coche « Je suis là » chaque jour pour faire grandir ta série et gagner des cadeaux.</p>`,
     `<h2 id="tutoTitle">🐾 Choisis ton premier compagnon</h2>
       <div class="grid tuto-picks">${['pingouin', 'chat', 'lapin'].map(k => `<button class="coll ${tuto.pick === k ? 'sel' : ''}" data-tuto-pick="${k}" aria-pressed="${tuto.pick === k}" style="--r:${RARITY.commun.color}">${petSVG(k)}<b>${SPECIES[k].name}</b></button>`).join('')}</div>
       <label class="field">Son nom <input id="tutoName" maxlength="20" value="${esc(tuto.name || SPECIES[tuto.pick].dflt)}"></label>`,
@@ -1238,8 +1354,9 @@ const selPet = () => preview && SPECIES[preview]?.rarity ? preview : S.species; 
 const card = (pv, name, desc, action, cls = '') => `<div class="item ${cls}">${pv}<b>${name}</b>${desc ? `<small>${desc}</small>` : ''}${action}</div>`;
 const buyBtn = (attr, price) => `<button class="btn primary" ${attr} ${S.coins < price ? 'disabled' : ''}>${price} 🪙</button>`;
 function howToGet(k) {
-  const P = SPECIES[k], a = ACH.find(a => a.reward.pet === k);
+  const P = SPECIES[k], a = ACH.find(a => a.reward.pet === k), st = Object.keys(STREAK_REWARDS).find(n => STREAK_REWARDS[n].pet === k);
   if (a) return `succès « ${a.name} »`;
+  if (st) return `${st} jours de série (exclusif)`;
   const eggs = Object.keys(EGGS).filter(e => EGGS[e].odds[P.rarity]).map(e => EGGS[e].name.toLowerCase());
   return [P.price != null && `${P.price} 🪙`, ...eggs].filter(Boolean).join(' ou ');
 }
@@ -1291,6 +1408,7 @@ function renderCompanions() {
     return `<div class="mission"><span class="egg-icon" style="--r:${E.color}">🥚</span><div class="info"><b>${E.name}</b>
       <div class="progress" role="progressbar" aria-label="Éclosion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(r * 100)}"><i style="width:${r * 100}%"></i></div>
       <small>${Math.floor(Math.min(e.min, E.min))} / ${E.min} min de révision</small></div>
+      ${r < 1 && S.boosts ? `<button class="btn" data-boost="${i}" aria-label="Utiliser un accélérateur (${S.boosts} en réserve)">⚡ +${CFG.boostMin / 60} h</button>` : ''}
       <button class="btn primary" data-hatch="${i}" ${r < 1 ? 'disabled' : ''}>${r < 1 ? 'En couvaison' : 'Faire éclore ✨'}</button></div>`;
   }).join('') : '<p class="empty-msg">Aucun œuf pour l\'instant. Tu peux en acheter à la boutique ou en gagner avec les succès.</p>';
 
@@ -1310,9 +1428,9 @@ const decorItem = ([id, d]) =>
       d.name, `data-decor="${id}"`, S.decor.owned.includes(id), S.decor.on.includes(id), d.price, 'Ranger', 'Placer');
 const SHOP_CATS = { oeufs: '🥚 Œufs', accessoires: '👗 Accessoires', decor: '🏠 Décor', saisons: '🍂 Saisons', chambres: '🛏️ Chambres', vues: '🪟 Vues', ambiances: '🎧 Ambiances', utilitaires: '🧰 Utilitaires' };
 const SHOP = {
-  oeufs: () => `<p class="hint">Un œuf éclot après un temps de révision et donne un compagnon que tu n'as pas encore. Il se couve dans l'onglet Collection.</p><div class="grid">` +
+  oeufs: () => `<p class="hint">Un œuf éclot après un temps de révision et donne un compagnon de sa rareté que tu n'as pas encore. Il se couve dans l'onglet Collection, et tes heures de révision comptent pour tous tes œufs à la fois.</p><div class="grid">` +
     Object.entries(EGGS).map(([k, E]) => card(`<span class="egg-icon" style="--r:${E.color}">🥚</span>`, E.name,
-      `Éclot après ${E.min / 60} h de révision<br>${Object.entries(E.odds).map(([r, p]) => `${RARITY[r].name} ${Math.round(p * 100)} %`).join(' · ')}`,
+      `Éclot après ${E.min / 60} h de révision<br>${Object.keys(E.odds).map(r => `Compagnon ${RARITY[r].name.toLowerCase()} (${COLL.filter(c => SPECIES[c].rarity === r && SPECIES[c].egg !== false).length})`).join(' · ')}`,
       buyBtn(`data-egg="${k}"`, E.price))).join('') + '</div>',
   accessoires: () => {
     if (!S.partner) dressing = 'main';
@@ -1334,7 +1452,8 @@ const SHOP = {
   ambiances: () => '<p class="hint">Clique sur une icône pour écouter un extrait. Le volume se règle dans l\'onglet Outils.</p><div class="grid">' +
     Object.entries(AMBIANCES).map(([k, a]) => card(`<button class="preview-btn" data-listen="${k}" aria-label="Écouter : ${a.name}"><span class="emoji">${a.icon}</span></button>`,
       a.name, a.desc, S.sounds.includes(k) ? '<span class="owned">✓ Possédé</span>' : buyBtn(`data-sound="${k}"`, a.price))).join('') + '</div>',
-  utilitaires: () => '<div class="grid">' + card('<span class="emoji">🧊</span>', 'Gel de série', `Protège ta série un jour sans révision. Réserve : ${S.freezes} / ${CFG.freezeMax}`,
+  utilitaires: () => '<div class="grid">' + card('<span class="emoji">⚡</span>', "Accélérateur d'œuf", `Ajoute ${CFG.boostMin / 60} h de couvaison à l'œuf de ton choix. En réserve : ${S.boosts}`,
+      buyBtn('data-buy-boost', CFG.boostPrice)) + card('<span class="emoji">🧊</span>', 'Gel de série', `Protège ta série un jour sans révision. Réserve : ${S.freezes} / ${CFG.freezeMax}`,
       S.freezes >= CFG.freezeMax ? '<span class="owned">✓ Réserve pleine</span>' : buyBtn('data-freeze', CFG.freezePrice)) + '</div>' +
     '<h3 class="slot-title">🎨 Thèmes de couleurs</h3><p class="hint">Clique sur une pastille pour essayer. Le mode nuit reste gratuit (bouton 🌙 en haut).</p><div class="grid">' +
     Object.entries(THEMES).map(([k, t]) => card(`<button class="preview-btn ${tryTheme === k ? 'trying' : ''}" data-try-theme="${k}" aria-label="Essayer le thème ${t.name}"><span class="swatch" style="--r:${t.color}"></span></button>`, t.name, '',
@@ -1421,7 +1540,8 @@ document.addEventListener('click', e => {
     setPhase('work'); renderStudy();
   }
   if (b.id === 'startBtn') start();
-  if (b.id === 'stopBtn') finish();
+  if (b.id === 'stopBtn' && (T.phase !== 'work' || T.mode === 'chrono' || confirm('Abandonner cette session ? Tu gardes les pièces déjà gagnées.'))) finish();
+  if (b.id === 'streakBadge') checkIn();
   if (b.id === 'focusBtn') {
     const on = document.body.classList.toggle('focus');
     b.textContent = on ? '↩️ Quitter la concentration' : '🎯 Concentration';
@@ -1487,6 +1607,8 @@ document.addEventListener('click', e => {
     if (S.sounds.includes(ds.sound) || !buy(a.price, a.name)) return;
     S.sounds.push(ds.sound); toast(`${a.icon} ${a.name} : règle son volume dans l'onglet Outils`); save(); renderAll();
   }
+  if ('buyBoost' in ds && buy(CFG.boostPrice, "Accélérateur d'œuf")) { S.boosts++; toast('⚡ Accélérateur rangé : utilise-le sur un œuf dans ta couveuse (Collection)'); save(); renderAll(); }
+  if (ds.boost && S.boosts > 0 && S.eggs[ds.boost]) { S.boosts--; S.eggs[ds.boost].min += CFG.boostMin; toast(`⚡ +${CFG.boostMin / 60} h de couvaison`); save(); renderAll(); }
   if ('freeze' in ds) {
     if (S.freezes >= CFG.freezeMax || !buy(CFG.freezePrice, 'Gel de série')) return;
     S.freezes++; toast('🧊 Gel de série en réserve'); save(); renderAll();
@@ -1687,8 +1809,13 @@ $('.petals').innerHTML = Array.from({ length: 14 }, (_, i) =>
 // vérifications rapides
 console.assert(new Set(missionsOf('2026-11-23').map(m => m.id)).size === 3, 'missions distinctes');
 console.assert(fmt(65) === '01:05' && fmt(3661) === '1:01:01', 'fmt');
-console.assert(levelOf(0) === 1 && levelOf(49) === 1 && levelOf(50) === 2 && levelOf(1500) === 10, 'levelOf');
-console.assert(COLL.length === 12 && ACH.length >= 20 && new Set(ACH.map(a => a.id)).size === ACH.length, 'collection et succès');
+console.assert(levelOf(0) === 1 && levelOf(99) === 1 && levelOf(100) === 2 && levelOf(900) === 10, 'levelOf');
+console.assert(eventOf('2026-11-07') === monthEvent('2026-11-07') && eventOf('2026-11-08') === CALM && monthEvent('2026-11-01') !== monthEvent('2026-12-01'), 'événement mensuel');
+console.assert(decayAfter(100, 1) === 75 && decayAfter(100, 2) === 56 && decayAfter(0, 3) === 0, 'baisse d\'amitié');
+const perRarity = r => COLL.filter(k => SPECIES[k].rarity === r && SPECIES[k].egg !== false).length;
+console.assert([['commun', 5], ['peuCommun', 5], ['rare', 4], ['epique', 4], ['legendaire', 3], ['mythique', 3]].every(([r, n]) => perRarity(r) === n) && SPECIES.hibou.egg === false, 'compagnons par rareté');
+console.assert(Object.keys(EGGS).every(r => RARITY[r]) && Object.values(STREAK_REWARDS).every(r => !r.pet || SPECIES[r.pet]), 'œufs et paliers de série');
+console.assert(COLL.length === 25 && ACH.length >= 20 && new Set(ACH.map(a => a.id)).size === ACH.length, 'collection et succès');
 console.assert(Object.values(EGGS).every(E => Math.abs(Object.values(E.odds).reduce((a, b) => a + b) - 1) < 1e-9), 'probabilités des œufs');
 console.assert(Object.values(DECOR).every(d => d.rug || SPR[d.icon]) && Object.values(SPR).every(r => r.join('').split('').every(ch => ch === '.' || PXC[ch])), 'dessins de la déco');
 console.assert(fmtMin(59) === '59 min' && fmtMin(125) === '2 h 05', 'fmtMin');
@@ -1709,6 +1836,8 @@ S.subjects.forEach(x => { const i = OLD_PAL.indexOf(String(x.color).toLowerCase(
 S.rooms = S.rooms.filter(k => ROOMS[k]); if (!ROOMS[S.room]) S.room = 'douce';
 S.views = S.views.filter(k => VIEWS[k]); if (!VIEWS[S.view]) S.view = 'ciel';
 
+if (!S.lastStudyAt) { S.lastStudyAt = Date.now(); S.decayed = 0; } // anciennes sauvegardes : la baisse d'amitié par tranches de 15 h démarre maintenant
+S.cfg.rounds ||= DEFAULT.cfg.rounds;
 applyDecay(); // avant la reprise du minuteur, qui peut terminer une session et effacer l'absence
 // reprise du minuteur après un rechargement
 let savedT = null;
@@ -1721,7 +1850,9 @@ if (savedT) {
   $('#goalInput').value = T.goal || '';
   if (T.running) { T.id = setInterval(tick, 250); tick(); } // le premier tick rattrape le temps écoulé
 } else setPhase('work');
-if (!bubble) say(absentDays() >= CFG.graceDays ? 'back' : nextExam() && daysTo(nextExam().date) <= 7 ? 'exam' : 'idle');
+if (!bubble) say(absentDays() >= 2 ? 'back' : nextExam() && daysTo(nextExam().date) <= 7 ? 'exam' : 'hello');
+// chaque demi-minute : baisse d'amitié si la page reste ouverte longtemps, et pénalité de pause en cours
+setInterval(() => { if (applyDecay()) renderAll(); if (T.pausedAt) { chargePause(); renderTimer(); } }, 30e3);
 if (new Date().getDay() === 1 && S.reviewSeen !== today() && S.sessions.length) { // le lundi, le compagnon annonce son bilan
   S.reviewSeen = today(); bubble = 'J\'ai préparé ton bilan de la semaine, il t\'attend dans 📊 Stats !'; save();
 }

@@ -47,7 +47,7 @@
       <div class="scene" id="scene">
         <div class="room"></div>
         <div class="timer" role="timer" aria-live="off"><div id="phase"></div><div id="time"></div><div class="tbar" role="progressbar" aria-label="Progression de la phase" aria-valuemin="0" aria-valuemax="100"><i id="tbar"></i></div></div>
-        <div class="badge" id="streakBadge" title="Série : jours d'affilée avec au moins 15 min de révision"></div>
+        <button class="badge" id="streakBadge" title="Série : coche ta présence chaque jour. 7 j : 50 🪙 · 14 j : accélérateur d'œuf · 30 j : compagnon exclusif · 90 j : 500 🪙"></button>
         <div class="bubble" id="bubble"></div>
       </div>
 
@@ -69,6 +69,7 @@
           <option value="intense">Intense 90 / 20</option>
           <option value="perso">Personnalisé</option>
         </select></label>
+        <label data-for="pomodoro">Nombre de pomodoros <input type="number" min="1" max="12" data-cfg="rounds"></label>
         <label data-for="perso">Travail <input type="number" min="1" max="180" data-cfg="work"> min</label>
         <label data-for="perso">Pause <input type="number" min="1" max="30" data-cfg="short"> min</label>
         <label data-for="perso">Grande pause <input type="number" min="5" max="60" data-cfg="long"> min</label>

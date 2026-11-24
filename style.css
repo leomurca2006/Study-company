@@ -218,7 +218,11 @@ body.night .cloud { opacity: .2; }
   font-weight: 700; font-size: .85rem; box-shadow: 0 3px 0 #0001; text-align: left;
 }
 .bubble:empty { display: none; }
-.badge { position: absolute; top: 12px; left: 12px; background: #fffc; color: var(--btn-ink); border-radius: 999px; padding: .2rem .6rem; font-weight: 800; font-size: .85rem; }
+.badge { position: absolute; top: 12px; left: 12px; background: #fffc; color: var(--btn-ink); border-radius: 999px; padding: .2rem .6rem; font-weight: 800; font-size: .85rem; border: 2px solid transparent; font-family: inherit; cursor: default; }
+.badge.todo { cursor: pointer; background: var(--pink); border-color: var(--pink-d); animation: wiggle 2.4s ease-in-out infinite; }
+body.night .badge.todo { box-shadow: 0 0 10px rgba(255, 79, 216, .6); }
+@keyframes wiggle { 0%, 90%, 100% { transform: none; } 94% { transform: rotate(-3deg); } 97% { transform: rotate(3deg); } }
+@media (prefers-reduced-motion: reduce) { .badge.todo { animation: none; } }
 @media (max-width: 520px) { .bubble { left: auto; right: 4%; bottom: 200px; } .shelf { display: none; } }
 
 .controls { display: flex; gap: .6rem; justify-content: center; }
