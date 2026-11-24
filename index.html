@@ -307,7 +307,16 @@
   <button class="btn primary wide" data-debrief-ok>Continuer</button>
 </dialog>
 
-<dialog id="notesDlg" aria-labelledby="notesDlgTitle">
+<dialog id="quitDlg" aria-labelledby="quitTitle">
+  <h2 id="quitTitle">🍅 Abandonner la session ?</h2>
+  <p>Es-tu sûr de vouloir abandonner ? Pas de problème : tu conserves les pièces gagnées 🪙</p>
+  <div class="row choice">
+    <button class="btn go" data-quit-yes>Oui, je m'arrête là</button>
+    <button class="btn stop" data-quit-no autofocus>Non, je vais continuer</button>
+  </div>
+</dialog>
+
+<dialog id="notesDlg"aria-labelledby="notesDlgTitle">
   <button class="grip" aria-label="Déplacer le bloc-notes (glisser, ou flèches du clavier ; double-clic pour le remettre en place)">✥</button>
   <h2 id="notesDlgTitle">📝 Bloc-notes</h2>
   <textarea id="notesQuick" rows="10" placeholder="Une idée, une formule, une question pour le prof…" aria-label="Bloc-notes"></textarea>

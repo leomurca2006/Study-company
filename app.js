@@ -1540,7 +1540,9 @@ document.addEventListener('click', e => {
     setPhase('work'); renderStudy();
   }
   if (b.id === 'startBtn') start();
-  if (b.id === 'stopBtn' && (T.phase !== 'work' || T.mode === 'chrono' || confirm('Abandonner cette session ? Tu gardes les pièces déjà gagnées.'))) finish();
+  if (b.id === 'stopBtn') T.phase !== 'work' || T.mode === 'chrono' ? finish() : $('#quitDlg').showModal(); // abandonner demande confirmation
+  if ('quitYes' in ds) { $('#quitDlg').close(); finish(); }
+  if ('quitNo' in ds) $('#quitDlg').close();
   if (b.id === 'streakBadge') checkIn();
   if (b.id === 'focusBtn') {
     const on = document.body.classList.toggle('focus');

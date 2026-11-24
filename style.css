@@ -87,6 +87,11 @@ main { padding: 0 1rem 3rem; }
 }
 .btn.primary { background: var(--mint); box-shadow: 0 4px 0 var(--mint-d); }
 .btn.wide { width: 100%; margin-top: .8rem; }
+/* oui / non de la confirmation d'abandon : vert et rouge fixes, quel que soit le thème */
+.btn.go { background: #8BEBA8; box-shadow: 0 4px 0 #3FBF72; }
+.btn.stop { background: #FF8FA3; box-shadow: 0 4px 0 #E8435F; }
+body.night .btn.go { box-shadow: 0 4px 0 #3FBF72, 0 0 12px rgba(139, 235, 168, .5); }
+body.night .btn.stop { box-shadow: 0 4px 0 #E8435F, 0 0 12px rgba(255, 143, 163, .5); }
 .btn:active { transform: translateY(2px); box-shadow: none; }
 .btn:disabled { opacity: .45; cursor: default; transform: none; }
 select, input {
