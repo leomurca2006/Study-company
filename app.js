@@ -1180,7 +1180,8 @@ function start() {
   if (!T.started) {
     if (T.phase === 'work') { T.sub = $('#subjectSelect').value; T.goal = $('#goalInput').value.trim(); T.midSaid = false; }
     say(T.phase === 'work' ? 'start' : 'pause');
-    if (window.Notification?.permission === 'default') Notification.requestPermission().catch(() => {}); // demandé seulement après un clic
+    // demandé une seule fois sur cet appareil (après un clic) : même si le navigateur oublie la réponse ou si la fenêtre est fermée sans choisir
+    if (window.Notification?.permission === 'default' && !store.raw('jardin_notif')) { store.set('jardin_notif', '1'); Notification.requestPermission().catch(() => {}); }
   }
   T.running = T.started = true; T.last = Date.now();
   T.id = setInterval(tick, 250);

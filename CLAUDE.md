@@ -41,7 +41,7 @@ The reference is the latest Boutique items: the rooms (`ROOMS`), the window view
 
 ## Running / checking
 
-- Run: open `index.html` directly in a browser (works from `file://`).
+- Run: open `index.html` directly in a browser (works from `file://`). The favicon is `favicon.svg`, the pixel tulip (`SPR.tulipe` without its pot).
 - Syntax check: `node --check app.js`
 - There is no test suite. `app.js` ends with `console.assert` self-checks on pure helpers and data integrity (`missionsOf`, `fmt`, `fmtMin`, `levelOf`, `eventOf`, `decayAfter`, collection size and companions per rarity, unique achievement ids, egg odds summing to 1, streak rewards). They only show up in the browser console (see the console-errors command below). Add one when you add a pure helper or change data that has an invariant.
 - Visual check (Windows, headless Edge):
@@ -85,6 +85,7 @@ Single script, organised top to bottom:
    **Earning (`credit(sec, full, subId)`)**: the only place where study time turns into rewards: coins (through `earn()`, capped per day), friendship (through `addPA()`, 1 PA per minute), subject minutes, egg incubation. Event multipliers apply. Partial minutes carry over in `S.carry`. The streak is not validated here (see `checkIn()`).
 6. **Timer `T`**:
    - It ticks with `Date.now()` deltas, so throttled background tabs stay accurate. `phaseEnd()` handles the pomodoro work/short/long cycle.
+   - Notifications (end of a phase, only when the tab is hidden) are asked for once per device, on the first start of a timer: `localStorage['jardin_notif']` records that the question was asked, so it never comes back, even if the browser forgets the answer.
    - It is saved separately in `localStorage['jardin_timer']` on every tick. On load, a running countdown resumes and its first tick catches up the time spent closed. A running chrono is restored paused.
    - `endFocus(full)` ends a focus session. It always credits the time (abandoning keeps what was earned). Under `CFG.minSession` minutes an abandoned session stops there; otherwise it logs to `S.sessions` and opens the `#debrief` dialog.
    - Pomodoro: `T.count` counts finished pomodoros of the series; `phaseEnd()` stops the series at `S.cfg.rounds`, and abandoning resets it. Pauses during work are tracked in `T.pauseSec` / `T.pausedAt`, and `T.charged` holds the coins already taken by `chargePause()`. `setPhase()` resets all three.
