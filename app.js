@@ -613,10 +613,10 @@ const DECOR = {
 
 // ---------- Boutique : ambiances et thèmes ----------
 const AMBIANCES = {
-  lofi: { name: 'Musique lofi', icon: '🎵', price: 0, desc: 'Accords doux et petit rythme' },
-  rain: { name: 'Pluie', icon: '🌧️', price: 0, desc: 'Pluie fine sur la fenêtre' },
-  wind: { name: 'Vent', icon: '🍃', price: 0, desc: 'Un souffle léger' },
-  cars: { name: 'Voitures', icon: '🚗', price: 0, desc: 'La ville au loin' },
+  lofi: { name: 'Musique lofi', icon: '🎵', price: 0, desc: '4 morceaux lofi qui s\'enchaînent' },
+  rain: { name: 'Pluie', icon: '🌧️', price: 0, desc: 'Pluie et orage au loin' },
+  wind: { name: 'Vent', icon: '🍃', price: 0, desc: 'Le vent qui souffle dehors' },
+  cars: { name: 'Voitures', icon: '🚗', price: 0, desc: 'La circulation en ville' },
   cafe: { name: 'Café animé', icon: '☕', price: 150, desc: 'Brouhaha et tasses qui tintent' },
   foret: { name: 'Forêt', icon: '🌲', price: 200, desc: "Feuillage et chants d'oiseaux" },
 };
@@ -886,7 +886,10 @@ const VILLE = (() => {
   };
 })();
 
-// ---------- Ambiance sonore (générée, aucun fichier audio) ----------
+// ---------- Ambiance sonore ----------
+// Deux sortes de sons : des fichiers MP3 (dossier sons/, `files`) lus par un élément <audio> dont on règle le volume,
+// et des sons générés en WebAudio (`build`). Les fichiers ne passent pas par WebAudio : ouverts en file://,
+// createMediaElementSource les rendrait muets (restriction d'origine).
 let AC;
 const MIX = {};
 const ctx = () => { AC ||= new AudioContext(); if (AC.state === 'suspended') AC.resume(); return AC; };
@@ -898,33 +901,12 @@ function noise(brown) {
 }
 const filt = (type, f, q = 1) => { const x = ctx().createBiquadFilter(); x.type = type; x.frequency.value = f; x.Q.value = q; return x; };
 const lfo = (rate, depth, param) => { const o = ctx().createOscillator(), g = ctx().createGain(); o.frequency.value = rate; g.gain.value = depth; o.connect(g).connect(param); o.start(); };
-const mtof = m => 440 * 2 ** ((m - 69) / 12);
 const SOUNDS = {
-  rain: { gain: 0.35, build: out => noise().connect(filt('highpass', 900)).connect(filt('lowpass', 6000)).connect(out) },
-  wind: { gain: 1.4, build: out => { const f = filt('bandpass', 450, 0.7); noise(true).connect(f).connect(out); lfo(0.07, 300, f.frequency); } },
-  cars: { gain: 1.6, build: out => { const g = ctx().createGain(); g.gain.value = 0.5; noise(true).connect(filt('lowpass', 320)).connect(g).connect(out); lfo(0.05, 0.5, g.gain); } },
-  lofi: { gain: 0.9, build: out => {
-    const a = ctx(), lp = filt('lowpass', 1200); lp.connect(out);
-    const hiss = a.createGain(); hiss.gain.value = 0.015; noise().connect(filt('highpass', 5000)).connect(hiss).connect(out); // grain de vinyle
-    const CHORDS = [[53, 57, 60, 64], [52, 55, 59, 62], [50, 53, 57, 60], [48, 52, 55, 59]]; // Fmaj7 Em7 Dm7 Cmaj7
-    const SCALE = [72, 74, 76, 79, 81];
-    const note = (type, f, t, len, vol) => {
-      const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = f; o.detune.value = (Math.random() - 0.5) * 12;
-      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-      o.connect(g).connect(lp); o.start(t); o.stop(t + len + 0.05);
-    };
-    const kick = t => { const o = a.createOscillator(), g = a.createGain(); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.25);
-      g.gain.setValueAtTime(0.35, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(g).connect(out); o.start(t); o.stop(t + 0.35); };
-    let i = 0;
-    const bar = () => {
-      const t = a.currentTime + 0.05, ch = CHORDS[i++ % 4];
-      ch.forEach(m => note('triangle', mtof(m), t, 3.1, 0.05));
-      note('sine', mtof(ch[0] - 12), t, 1.4, 0.18); note('sine', mtof(ch[0] - 12), t + 1.5, 1.4, 0.14);
-      kick(t); kick(t + 1.5);
-      [0.75, 2.25].forEach(dt => Math.random() < 0.7 && note('sine', mtof(SCALE[Math.floor(Math.random() * 5)]), t + dt, 0.9, 0.04));
-    };
-    bar(); setInterval(bar, 3000);
-  } },
+  // fichiers de Pixabay (licence Pixabay : usage libre, sans attribution obligatoire)
+  lofi: { gain: 0.8, files: ['sons/lofi-1.mp3', 'sons/lofi-2.mp3', 'sons/lofi-3.mp3', 'sons/lofi-4.mp3'] }, // enchaînés au hasard
+  rain: { gain: 1, files: ['sons/pluie.mp3'] },
+  wind: { gain: 1, files: ['sons/vent.mp3'] },
+  cars: { gain: 1, files: ['sons/voitures.mp3'] },
   cafe: { gain: 1.2, build: out => {
     const a = ctx(), g = a.createGain(); g.gain.value = 0.6;
     noise(true).connect(filt('bandpass', 500, 0.8)).connect(g).connect(out); lfo(0.3, 0.2, g.gain); // brouhaha
@@ -953,9 +935,20 @@ const SOUNDS = {
     chirp();
   } },
 };
+function track(files) { // un fichier en boucle, ou plusieurs enchaînés dans un ordre tiré au hasard
+  const el = new Audio(), list = shuffle(files); let i = 0;
+  el.src = list[0]; el.loop = list.length === 1;
+  el.addEventListener('ended', () => { el.src = list[++i % list.length]; el.play().catch(() => {}); });
+  return el;
+}
 function setVol(k, v) {
   S.vol[k] = v;
   if (k === 'rain') document.body.style.setProperty('--rain', v ? 0.4 + v * 0.6 : 0);
+  if (SOUNDS[k].files) { // le fichier n'est chargé que la première fois qu'on monte son volume
+    if (v > 0 && !MIX[k]) MIX[k] = track(SOUNDS[k].files);
+    if (MIX[k]) { MIX[k].volume = Math.min(1, v * SOUNDS[k].gain); if (v) MIX[k].play().catch(() => {}); else MIX[k].pause(); }
+    return;
+  }
   if (!AC && !v) return;
   if (v > 0 && !MIX[k]) { const g = ctx().createGain(); g.gain.value = 0; g.connect(AC.destination); SOUNDS[k].build(g); MIX[k] = g; }
   if (MIX[k]) MIX[k].gain.setTargetAtTime(v * SOUNDS[k].gain, ctx().currentTime, 0.3);

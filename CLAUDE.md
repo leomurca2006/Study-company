@@ -76,7 +76,10 @@ Single script, organised top to bottom:
    - Every species and the partner (Perle, the `pingouine` entry, which can't be adopted) shares one silhouette in `petSVG(species, equip)`. That is why every cosmetic fits every animal.
    - Cosmetic SVGs use fixed coordinates in a 200×220 viewBox: eyes at (84,104)/(116,104), head top at y≈56, neck at y≈130–140.
    - Visual style is "doodle": a dark outline (`LINE`) applied through wrapping `<g stroke>` groups. Ears and back are drawn *before* the body so the body hides their bases.
-4. **Ambient audio**: everything is synthesised with WebAudio (noise buffers, filters, LFOs, a scheduled chord loop for lofi). There are no audio files. The context is created lazily; saved volumes are re-applied on the first `pointerdown` because of autoplay rules.
+4. **Ambient audio**: `SOUNDS` mixes two kinds of sources.
+   - **MP3 files** (`files`, in `sons/`, from Pixabay): lofi (4 tracks chained in random order by `track()`), pluie, vent, voitures. They play through a plain `<audio>` element whose `volume` is set directly. Do not route them through WebAudio: from `file://`, `createMediaElementSource` outputs silence (cross-origin rule). A file is only loaded the first time its volume goes above 0.
+   - **Synthesised** sounds (`build`, WebAudio noise, filters and LFOs): café and forêt. The context is created lazily.
+   - Saved volumes are re-applied on the first `pointerdown` because of autoplay rules.
 5. **Coins**: every change goes through `addCoins(n, why)`, which feeds the history in `S.tx` (shown in Réglages). `earn()` is the capped variant used for study time.
    **Earning (`credit(sec, full, subId)`)**: the only place where study time turns into rewards: coins (through `earn()`, capped per day), friendship (through `addPA()`, 1 PA per minute), subject minutes, egg incubation. Event multipliers apply. Partial minutes carry over in `S.carry`. The streak is not validated here (see `checkIn()`).
 6. **Timer `T`**:
