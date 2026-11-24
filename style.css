@@ -132,15 +132,17 @@ body.night .sky { background: linear-gradient(180deg, #110927 0 25%, #241050 25%
 /* palette de la mini ville : violets du ciel, néons magenta et cyan, ambre des fenêtres, lune lilas */
 .sky::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 35% 115%, rgba(255, 79, 216, .18), transparent 70%); } /* lueur des néons à l'horizon */
 body.night .sky::before, .sky.v-etoiles::before, .sky.v-orage::before { background: radial-gradient(ellipse at 35% 115%, rgba(255, 79, 216, .38), transparent 70%); }
-.sun { position: absolute; top: 16px; right: 22%; width: 34px; height: 34px; border-radius: 50%; background: #FFD99A; box-shadow: 0 0 18px #FFC46B; transition: opacity .6s; }
-.moon { position: absolute; top: 14px; right: 24%; width: 30px; height: 30px; border-radius: 50%; box-shadow: -9px 5px 0 0 #FBE9FF; filter: drop-shadow(0 0 6px rgba(255, 220, 255, .55)); opacity: 0; transition: opacity .6s; }
+/* soleil, lune et nuages : dessins en pixels (SPR.soleil, croissant, nuage), étirés à la taille de leur case */
+.sun, .moon, .cloud { line-height: 0; }
+.sun svg, .moon svg, .cloud svg { width: 100%; height: 100%; }
+.sun { position: absolute; top: 16px; right: 22%; width: 34px; height: 34px; filter: drop-shadow(0 0 8px #FFC46B); transition: opacity .6s; }
+.moon { position: absolute; top: 14px; right: 24%; width: 30px; height: 30px; filter: drop-shadow(0 0 6px rgba(255, 220, 255, .55)); opacity: 0; transition: opacity .6s; }
 .stars {
   position: absolute; inset: 0; opacity: 0; transition: opacity .6s;
   background-image: radial-gradient(#fff 1px, transparent 1.6px), radial-gradient(#BFF6FF 1px, transparent 1.6px);
   background-size: 38px 34px, 55px 47px; background-position: 0 0, 19px 21px;
 }
-.cloud { position: absolute; height: 18px; width: 56px; border-radius: 20px; background: #FBE9FF; animation: drift 40s linear infinite; transition: opacity .6s; }
-.cloud::before { content: ""; position: absolute; width: 26px; height: 26px; border-radius: 50%; background: inherit; top: -12px; left: 10px; }
+.cloud { position: absolute; height: 24px; width: 64px; animation: drift 40s linear infinite; transition: opacity .6s; }
 .cloud.c1 { top: 60px; left: -60px; }
 .cloud.c2 { top: 96px; left: -60px; animation-delay: -22s; transform: scale(.8); }
 @keyframes drift { to { left: 110%; } }
@@ -472,9 +474,9 @@ body.night :is([data-chambre=fleurie], [data-chambre=serre], [data-chambre=zen])
 /* vues de la fenêtre */
 .sky.v-neige { background: linear-gradient(180deg, #C9A6E4 0 30%, #D9BDEE 30% 55%, #E7CFF5 55% 78%, #FBE9FF 78%); }
 body.night .sky.v-neige { background: linear-gradient(180deg, #110927 0 35%, #241050 35% 65%, #4B1A72 65%); }
-.v-neige::after { content: ""; position: absolute; left: -5%; right: -5%; bottom: -6px; height: 20px; border-radius: 50%; background: #FBE9FF; }
-body.night .v-neige::after { background: #C9B6E8; }
-.v-neige i { position: absolute; top: -8px; width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 4px #BFF6FF; animation: snow linear infinite; }
+.v-neige::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 12px; background: #FBE9FF; box-shadow: 0 -4px 0 #FFF7FE; }
+body.night .v-neige::after { background: #C9A6E4; box-shadow: 0 -4px 0 #E7CFF5; }
+.v-neige i { position: absolute; top: -8px; width: 5px; height: 5px; background: #fff; box-shadow: 0 0 4px #BFF6FF; animation: snow linear infinite; }
 @keyframes snow { to { transform: translate(16px, 160px); } }
 .sky.v-etoiles { background: linear-gradient(180deg, #110927 0 25%, #241050 25% 50%, #35206F 50% 68%, #4B1A72 68% 84%, #7A2380 84%); }
 .sky.v-etoiles .stars, .sky.v-etoiles .moon { opacity: 1; }
@@ -484,7 +486,7 @@ body.night .v-neige::after { background: #C9B6E8; }
 .shoot.s2 { top: 30px; left: 55%; animation-delay: -3.5s; animation-duration: 9s; }
 @keyframes shoot { 0%, 70% { opacity: 0; transform: translate(0, 0) rotate(-20deg); } 72% { opacity: 1; } 86%, 100% { opacity: 0; transform: translate(-140px, 50px) rotate(-20deg); } }
 .sky.v-orage { background: linear-gradient(180deg, #150B31 0 35%, #2D1A62 35% 68%, #4B1A72 68%); }
-.sky.v-orage .cloud { background: #35206F; opacity: 1; }
+.sky.v-orage .cloud { opacity: 1; }
 .v-orage .cloud.c3 { top: 30px; left: -60px; animation-delay: -12s; transform: scale(1.3); }
 .bolt { position: absolute; left: 38%; top: 14px; width: 24px; opacity: 0; animation: bolt 7s infinite; filter: drop-shadow(0 0 6px #4FE3FF); }
 .bolt path { fill: #FFD99A; }

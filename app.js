@@ -613,6 +613,11 @@ const SPR = {
 };
 SPR.cadre[1] = SPR.cadre[10] = 'k' + 'o'.repeat(12) + 'k';
 SPR.cadeau2 = SPR.cadeau.map(r => r.replace(/c/g, 'y').replace(/P/g, 'g'));
+// ciel de la fenêtre (taille fixée en CSS : .sun, .moon, .cloud)
+SPR.soleil = ['...oooo...', '.ooyyyyoo.', '.oyywyyyo.', 'oyywyyyyyo', 'oyyyyyyyyo', 'oyyyyyyyyo', 'oyyyyyyyyo', '.oyyyyyyo.', '.ooyyyyoo.', '...oooo...'];
+SPR.croissant = ['...wwww...', '.wwlll....', '.wll......', 'wll.......', 'wll.......', 'wll.......', 'wll.......', '.wll......', '.wwlll....', '...wwww...'];
+SPR.nuage = ['.....wwww.......', '...wwwwwwww.ww..', '..wwwwwwwwwwwwww', '.wwwwwwwwwwwwwww', 'wwwwwwwwwwwwwwww', '.llllllllllllll.'];
+SPR.nuageOrage = SPR.nuage.map(r => r.replace(/w/g, 'u').replace(/l/g, 'K'));
 const pxCache = {};
 function pix(name, k = 3, swap = '') { // swap = 'ab' : la couleur a devient b (ex. fanions, chaussettes)
   const key = `${name}|${k}|${swap}`;
@@ -868,13 +873,13 @@ const rugBg = c => `background: ${rugCache[c] ||= pxURL(60, 12, (x, y) => { // t
 // Vues de la fenêtre
 const VIEWS = {
   ciel: { name: 'Ciel changeant', icon: '⛅', price: 0, desc: 'Soleil le jour, lune la nuit',
-    html: () => '<div class="sky"><span class="stars"></span><span class="sun"></span><span class="moon"></span><span class="cloud c1"></span><span class="cloud c2"></span></div>' },
+    html: () => `<div class="sky"><span class="stars"></span><span class="sun">${pix('soleil')}</span><span class="moon">${pix('croissant')}</span><span class="cloud c1">${pix('nuage')}</span><span class="cloud c2">${pix('nuage')}</span></div>` },
   neige: { name: 'Neige', icon: '❄️', price: 200, desc: 'Des flocons qui tombent doucement',
     html: () => `<div class="sky v-neige">${Array.from({ length: 16 }, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-duration:${4 + (i % 4)}s;animation-delay:-${(i * 0.7).toFixed(1)}s"></i>`).join('')}</div>` },
   etoiles: { name: 'Nuit étoilée', icon: '🌌', price: 250, desc: 'Étoiles qui scintillent et étoiles filantes',
-    html: () => '<div class="sky v-etoiles"><span class="stars"></span><span class="stars s2"></span><span class="moon"></span><i class="shoot"></i><i class="shoot s2"></i></div>' },
+    html: () => `<div class="sky v-etoiles"><span class="stars"></span><span class="stars s2"></span><span class="moon">${pix('croissant')}</span><i class="shoot"></i><i class="shoot s2"></i></div>` },
   orage: { name: 'Orage', icon: '⛈️', price: 300, desc: 'Pluie battante et éclairs',
-    html: () => '<div class="sky v-orage"><span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span><svg class="bolt" viewBox="0 0 20 40" aria-hidden="true"><path d="M12 0L2 22h7L5 40l13-25h-7z" fill="#FFD99A"/></svg><span class="flash"></span></div>' },
+    html: () => `<div class="sky v-orage">${['c1', 'c2', 'c3'].map(c => `<span class="cloud ${c}">${pix('nuageOrage')}</span>`).join('')}<svg class="bolt" viewBox="0 0 20 40" aria-hidden="true"><path d="M12 0L2 22h7L5 40l13-25h-7z" fill="#FFD99A"/></svg><span class="flash"></span></div>` },
   ville: { name: 'Mini ville', icon: '🌃', price: 450, desc: 'Une ville en pixels qui vit la nuit. Clique sur un immeuble !',
     html: () => `<canvas class="ville" width="${VILLE.W}" height="${VILLE.H}" aria-hidden="true"></canvas>` },
 };
