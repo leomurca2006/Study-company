@@ -391,21 +391,102 @@ const animOf = sp => Object.entries(LEVEL_UNLOCKS).filter(([l, u]) => u.anim && 
 const storyLevel = i => +Object.keys(LEVEL_UNLOCKS).find(l => LEVEL_UNLOCKS[l].story === i);
 const nameOf = sp => S.names[sp] || SPECIES[sp].dflt;
 
-function petSVG(sp, eq = {}) {
-  const P = SPECIES[sp], layer = s => eq[s] ? COSMETICS[eq[s]].svg : '';
-  // les oreilles passent derrière le corps pour que le contour reste propre
-  return `<svg viewBox="0 0 200 220" aria-hidden="true">
-    <g stroke="${LINE}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">${P.back || ''}${P.ears || ''}
+// Dessin vectoriel d'une couche : 'base' (le corps et le visage, sans yeux ni joues), 'cos' (accessoires) ou 'book'.
+// Le contour est tracé en MAGIC : pixPet() le reconnaît et le remplace par une teinte plus sombre de la couleur voisine.
+const MAGIC = '#010203', PET_N = 32, PET_M = 35, PET_SS = 8; // 32 × 35 pixels, 8 × 8 points mesurés par pixel
+function petVec(sp, eq, layer, wrap = true) {
+  const P = SPECIES[sp], cos = s => eq[s] ? COSMETICS[eq[s]].svg : '', W = PET_N + 2, H = PET_M + 2;
+  const g = {
+    base: `<g stroke="${MAGIC}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">${P.back || ''}${P.ears || ''}
       <ellipse cx="78" cy="208" rx="15" ry="6" fill="${P.feet}"/><ellipse cx="122" cy="208" rx="15" ry="6" fill="${P.feet}"/>
       <path d="M46 118Q22 150 40 172Q52 160 56 140Z" fill="${P.body}"/><path d="M154 118Q178 150 160 172Q148 160 144 140Z" fill="${P.body}"/>
-      <path d="M100 56C140 56 162 100 162 140C162 186 136 208 100 208C64 208 38 186 38 140C38 100 60 56 100 56Z" fill="${P.body}"/>${P.belly}
-    </g>
-    <circle cx="84" cy="104" r="4.5" fill="#3b3550"/><circle cx="116" cy="104" r="4.5" fill="#3b3550"/>
-    <path d="M64 122l6-3M66 127l6-3M136 122l-6-3M134 127l-6-3" stroke="#f2a3bb" stroke-width="2.5" stroke-linecap="round"/>
-    ${P.face}
-    <g stroke="${LINE}" stroke-width="2" stroke-linejoin="round">${eq.tete ? '' : P.hair || ''}${layer('cou')}${layer('yeux')}${layer('tete')}</g>
-    <g class="book"><path d="M62 170L100 178L138 170L138 198L100 206L62 198Z" fill="#fff" stroke="${LINE}" stroke-width="3" stroke-linejoin="round"/><path d="M100 178V206M72 180L92 184M108 184L128 180M72 188L92 192M108 192L128 188" stroke="#d6cbee" stroke-width="2"/></g>
-  </svg>`;
+      <path d="M100 56C140 56 162 100 162 140C162 186 136 208 100 208C64 208 38 186 38 140C38 100 60 56 100 56Z" fill="${P.body}"/></g>
+      <g stroke="none">${P.belly}</g>${P.face}<g stroke="${MAGIC}" stroke-width="4" stroke-linejoin="round">${eq.tete ? '' : P.hair || ''}</g>`,
+    cos: `<g stroke="${MAGIC}" stroke-width="4" stroke-linejoin="round">${cos('cou')}${cos('yeux')}${cos('tete')}</g>`,
+    book: `<path d="M62 170L100 178L138 170L138 198L100 206L62 198Z" fill="#fff" stroke="${MAGIC}" stroke-width="6" stroke-linejoin="round"/><path d="M100 178V206" stroke="#d6cbee" stroke-width="3"/>`,
+  }[layer];
+  if (!wrap) return g;
+  // une case de marge autour des 200 × 220 du dessin, pour le contour
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W * PET_SS}" height="${H * PET_SS}" viewBox="${-200 / PET_N} ${-220 / PET_M} ${200 * W / PET_N} ${220 * H / PET_M}" preserveAspectRatio="none">${g}</svg>`;
+}
+const mixHex = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
+const luma = c => [1, 3, 5].reduce((s, i, k) => s + parseInt(c.slice(i, i + 2), 16) * [.3, .59, .11][k], 0);
+const loadImg = src => new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = src; });
+function petCells(img) { // chaque pixel prend la couleur la plus présente dans sa case ; le contour et l'encre du visage passent en priorité
+  const W = PET_N + 2, H = PET_M + 2, k = PET_SS, cv = document.createElement('canvas');
+  cv.width = W * k; cv.height = H * k;
+  const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0);
+  const d = cx.getImageData(0, 0, W * k, H * k).data, out = [], ink = LINE.toLowerCase();
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const n = {}; let op = 0;
+    for (let y = j * k; y < j * k + k; y++) for (let x = i * k; x < i * k + k; x++) {
+      const o = (y * W * k + x) * 4;
+      if (d[o + 3] < 128) continue;
+      op++;
+      if (d[o + 3] === 255) { const c = '#' + (1 << 24 | d[o] << 16 | d[o + 1] << 8 | d[o + 2]).toString(16).slice(1); n[c] = (n[c] || 0) + 1; }
+    }
+    const all = k * k, best = Object.keys(n).sort((a, b) => n[b] - n[a])[0];
+    out.push(op < all / 2 ? null : (n[MAGIC] || 0) >= .4 * all ? MAGIC : (n[ink] || 0) >= .25 * all ? LINE : best || null);
+  }
+  return out;
+}
+const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]], N8 = [...N4, [1, 1], [1, -1], [-1, 1], [-1, -1]];
+function softPx(g, shade) { // style doux : pas de trait foncé, le bord prend une teinte plus sombre de sa couleur ; ombre violette en bas à droite
+  const W = PET_N + 2, at = (i, j) => i < 0 || j < 0 || i >= W || j * W + i >= g.length ? null : g[j * W + i], count = {};
+  g.forEach(c => c && (count[c] = (count[c] || 0) + 1));
+  return g.map((c, n) => {
+    if (!c || c === LINE) return c;
+    const i = n % W, j = Math.floor(n / W), out = (a, b) => { const v = at(i + a, j + b); return !v || v === MAGIC; };
+    if (c === MAGIC) {
+      const near = {};
+      N8.forEach(([a, b]) => { const v = at(i + a, j + b); if (v && v !== MAGIC && v !== LINE) near[v] = (near[v] || 0) + 1; });
+      const base = Object.keys(near).sort((a, b) => near[b] - near[a])[0];
+      return base ? mixHex(base, LINE, .45) : '#4B1A72';
+    }
+    if (N4.some(([a, b]) => !at(i + a, j + b))) return mixHex(c, LINE, .45);
+    if (!shade || count[c] < 16) return c;
+    if (out(2, 2) || out(1, 1)) return mixHex(c, '#4B1A72', .3);
+    if (out(-1, -1)) return mixHex(c, '#FFFFFF', .5);
+    return c;
+  });
+}
+function pxRects(g) { // une <rect> par suite de pixels identiques sur une ligne
+  const W = PET_N + 2; let s = '';
+  for (let n = 0; n < g.length;) {
+    let r = 1; while (g[n + r] === g[n] && (n + r) % W) r++;
+    if (g[n]) s += `<rect x="${n % W}" y="${Math.floor(n / W)}" width="${r}" height="1" fill="${g[n]}"/>`;
+    n += r;
+  }
+  return s;
+}
+async function pixPet(sp, eq) {
+  const [base, cos, book] = await Promise.all(['base', 'cos', 'book'].map(async l =>
+    petCells(await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(petVec(sp, eq, l))))));
+  const W = PET_N + 2, g = softPx(base, true), set = (i, j, c) => { if (g[j * W + i]) g[j * W + i] = c; };
+  const px = X => 1 + Math.floor(X * PET_N / 200), py = Y => 1 + Math.floor(Y * PET_M / 220);
+  const ex = px(84), ey = py(104), kx = px(68), ky = py(122);
+  for (const x0 of [ex - 1, W - 1 - ex]) { // yeux 2 × 2 avec un reflet ; clairs sur une tache foncée (panda, raton)
+    const under = g[ey * W + x0], dark = under && luma(under) < 90;
+    [[0, -1], [1, -1], [0, 0], [1, 0]].forEach(([a, b]) => set(x0 + a, ey + b, dark ? '#FFF7FE' : LINE));
+    if (!dark) set(x0, ey - 1, '#FFF7FE');
+  }
+  for (const x0 of [kx, W - 2 - kx]) { set(x0, ky, '#FF8FE6'); set(x0 + 1, ky, '#FF8FE6'); } // joues
+  return `<svg viewBox="0 0 ${W} ${PET_M + 2}" shape-rendering="crispEdges" aria-hidden="true">${pxRects(g)}${pxRects(softPx(cos))}<g class="book">${pxRects(softPx(book))}</g></svg>`;
+}
+// Les compagnons sont dessinés une fois pour toutes (en tâche de fond) : en attendant, une case vide de la même taille.
+const pxPets = {}, pxWait = new Set();
+function petSVG(sp, eq = {}) {
+  const key = [sp, eq.tete, eq.yeux, eq.cou].join('|');
+  if (pxPets[key]) return pxPets[key];
+  if (!pxWait.has(key)) {
+    pxWait.add(key);
+    pixPet(sp, eq).catch(() => // navigateur qui refuse de relire le canvas : le dessin vectoriel d'origine
+      `<svg viewBox="0 0 200 220" aria-hidden="true">${(petVec(sp, eq, 'base', false) + petVec(sp, eq, 'cos', false)).replaceAll(MAGIC, LINE)}<circle cx="84" cy="104" r="4.5" fill="${LINE}"/><circle cx="116" cy="104" r="4.5" fill="${LINE}"/><g class="book">${petVec(sp, eq, 'book', false).replaceAll(MAGIC, LINE)}</g></svg>`).then(svg => {
+      pxPets[key] = svg; pxWait.delete(key);
+      document.querySelectorAll(`svg[data-pk="${CSS.escape(key)}"]`).forEach(el => { el.outerHTML = svg; });
+    });
+  }
+  return `<svg data-pk="${esc(key)}" viewBox="0 0 ${PET_N + 2} ${PET_M + 2}" aria-hidden="true"></svg>`;
 }
 const petsHTML = (sp = S.species, partner = S.partner, eqMain = S.equip, eqPartner = S.partnerEquip) => `<button class="pet main" data-talk aria-label="Parler à ${esc(nameOf(sp))}">${petSVG(sp, eqMain)}</button>` +
   (partner ? `<div class="pet partner">${petSVG('pingouine', eqPartner)}</div><span class="love" aria-hidden="true">💕</span>` : '');
@@ -693,15 +774,97 @@ function checkAch() { // appelé à chaque rendu : débloque succès et accessoi
   });
   if (S.ach.length + S.owned.length !== before) save();
 }
-// Chambres : le motif des murs et du sol est en CSS ([data-chambre=…] .wall / .floor)
+// Chambres : le motif des murs et du sol est en CSS ([data-chambre=…] .wall / .floor) ; celles de ROOM_PX sont en pixel art
 const ROOMS = {
-  douce: { name: 'Chambre douce', price: 0, desc: 'Murs pastel, tout simplement' },
+  douce: { name: 'Chambre douce', price: 0, desc: 'Murs à pois et parquet clair' },
   fleurie: { name: 'Papier peint fleuri', price: 200, desc: 'Petits pois roses et menthe' },
-  bois: { name: 'Cabane en bois', price: 250, desc: 'Des planches chaleureuses' },
+  bois: { name: 'Cabane en bois', price: 250, desc: 'Planches ambrées, violettes la nuit' },
   serre: { name: 'Véranda', price: 300, desc: 'Lattes vertes et carrelage' },
   zen: { name: 'Chambre zen', price: 350, desc: 'Cloisons de papier et nattes' },
-  grenier: { name: 'Grenier étoilé', price: 450, desc: 'Un ciel peint au mur' },
+  neon: { name: 'Studio néon', price: 400, desc: 'Carrelage, cœur lumineux et fenêtre en néon' },
+  grenier: { name: 'Grenier étoilé', price: 450, desc: 'Plafond en pente et plinthe néon la nuit' },
 };
+// Pixel art des chambres : chaque tuile est dessinée au chargement (t(x, y) = couleur d'un pixel) puis répétée en CSS.
+// Un pixel vaut PX_EM, comme les dessins de la déco (k = 3), donc tout grandit avec la pièce.
+const PX_EM = 3 / 16;
+function pxURL(w, h, t) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const cx = cv.getContext('2d');
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = t(x, y); if (c) { cx.fillStyle = c; cx.fillRect(x, y, 1, 1); } }
+  return `url(${cv.toDataURL()})`;
+}
+const pxTile = (w, h, t) => `${pxURL(w, h, t)} 0 0 / ${w * PX_EM}em ${h * PX_EM}em`;
+const boards = (step, base, seam) => pxTile(28, step * 2, (x, y) => y % step === step - 1 || x === (y < step ? 0 : 13) ? seam : base); // lattes décalées
+const HEART = ['.PP.PP.', 'P..P..P', 'P.....P', '.P...P.', '..P.P..', '...P...']; // tube néon
+const ROOM_PX = { // n = nuit : couleurs de nuit explicites, jamais de filtre
+  douce: n => ({
+    wall: pxTile(16, 16, (x, y) => x === 4 && y === 4 || x === 12 && y === 12 ? (n ? '#4B1A72' : '#F4B5E8') : n ? '#35206F' : '#FBE9FF'),
+    floor: boards(6, n ? '#241050' : '#E7CFF5', n ? '#201246' : '#D9BDEE'), plinthe: n ? '#4B1A72' : '#FFF7FE',
+  }),
+  bois: n => ({
+    wall: pxTile(20, 24, (x, y) => x % 10 === 0 ? (n ? '#201246' : '#E8943A') : x % 10 === 5 && y % 12 === 7 ? (n ? '#4B1A72' : '#E8943A') // nœuds du bois
+      : (x / 10 | 0) ? (n ? '#35206F' : '#FFD99A') : (n ? '#2D1A62' : '#FFC46B')),
+    floor: boards(5, n ? '#2D1A62' : '#FFC46B', n ? '#150B31' : '#E8943A'), plinthe: n ? '#201246' : '#E8943A',
+  }),
+  grenier: n => ({
+    wall: pxTile(24, 24, (x, y) => {
+      const plus = [[6, 6], [18, 17]].some(([a, b]) => Math.abs(x - a) + Math.abs(y - b) <= 1), dot = [[19, 4], [4, 18], [12, 12]].some(([a, b]) => x === a && y === b);
+      return plus ? (n ? '#FFD99A' : '#FF8FE6') : dot ? (n ? '#BFF6FF' : '#F4B5E8') : n ? '#241050' : '#E7CFF5';
+    }),
+    floor: boards(6, n ? '#201246' : '#D9BDEE', n ? '#150B31' : '#C9A6E4'), plinthe: n ? '#FF4FD8' : '#F4B5E8', glow: n && 'rgba(255, 79, 216, .6)',
+    // pentes du toit dans les coins du haut (cachées pendant une saison, qui change le mur)
+    extra: sel => `${sel}[data-saison=""] .wall::before, ${sel}[data-saison=""] .wall::after { content: ""; position: absolute; top: 0; left: 0; width: ${50 * PX_EM}em; height: ${40 * PX_EM}em;
+      background: ${pxURL(50, 40, (x, y) => { const d = (2000 - 40 * (x + .5) - 50 * (y + .5)) / 64; return d < 0 ? '' : d < 2 ? '#2D1A62' : (x * .8 + y) % 9 < 2 ? (n ? '#201246' : '#C9A6E4') : (n ? '#150B31' : '#D9BDEE'); })} 0 0 / 100% 100%; }
+      ${sel}[data-saison=""] .wall::after { left: auto; right: 0; transform: scaleX(-1); }`,
+  }),
+  neon: n => ({
+    wall: pxTile(8, 8, (x, y) => !x || !y ? (n ? '#2D1A62' : '#D9BDEE') : n ? '#201246' : '#E7CFF5'),
+    floor: boards(6, n ? '#150B31' : '#D9BDEE', n ? '#201246' : '#C9A6E4'), plinthe: n ? '#4FE3FF' : '#FFF7FE', glow: n && 'rgba(79, 227, 255, .55)',
+    extra: sel => `${sel}[data-saison=""] .wall::before { content: ""; position: absolute; right: calc(var(--winL) + 1em); top: 11%; width: ${7 * 4 / 16}em; height: ${6 * 4 / 16}em;
+      background: ${pxURL(7, 6, (x, y) => HEART[y][x] === 'P' ? (n ? '#FF4FD8' : '#FF8FE6') : '')} 0 0 / 100% 100%; ${n ? 'filter: drop-shadow(0 0 .25em #FF4FD8) drop-shadow(0 0 .6em #FF4FD8);' : ''} }
+      ${sel} .window { box-shadow: 0 0 0 6px ${n ? '#FF4FD8, 0 0 20px #FF4FD8' : '#FF8FE6'}; }`, /* 6 px : le néon dépasse du contour de 3 px */
+  }),
+};
+// Les autres chambres et les saisons : tuiles de jour seulement, la nuit garde le voile violet (style.css).
+// Les saisons gardent leur sélecteur .scene[data-saison=…], plus précis que les chambres, donc leur mur l'emporte.
+const FLAT_PX = {
+  '[data-chambre=fleurie]': {
+    wall: pxTile(14, 14, (x, y) => x >= 2 && x < 4 && y >= 2 && y < 4 ? '#FF8FE6' : x >= 9 && x < 11 && y >= 9 && y < 11 ? '#8FF0FF' : '#FBE9FF'),
+    floor: boards(6, '#E7CFF5', '#D9BDEE') },
+  '[data-chambre=serre]': {
+    wall: pxTile(16, 4, x => x >= 14 ? '#8FF0FF' : '#D9F7FF'),
+    floor: pxTile(8, 8, (x, y) => (x + y >> 2) % 2 ? '#E7CFF5' : '#FBE9FF') },
+  '[data-chambre=zen]': {
+    wall: pxTile(14, 14, (x, y) => x === 13 || y === 13 ? '#F4B5E8' : '#FBE9FF'),
+    floor: pxTile(24, 12, (x, y) => x === 23 || y === 11 ? '#8FF0FF' : '#BFF6FF') },
+  '.scene[data-saison=printemps]': {
+    wall: pxTile(16, 16, (x, y) => { // petites fleurs : cœur ambre, pétales roses
+      for (const [a, b, c] of [[4, 4, '#FF8FE6'], [12, 12, '#FFB8EE']]) { const d = Math.abs(x - a) + Math.abs(y - b); if (!d) return '#FFD99A'; if (d === 1) return c; }
+      return '#FBE9FF'; }),
+    floor: boards(6, '#B8F5E0', '#4FE3B0') },
+  '.scene[data-saison=ete]': {
+    wall: pxTile(20, 4, x => x < 10 ? '#D9F7FF' : '#FFF7FE'),
+    floor: pxTile(8, 6, (x, y) => x === 1 && y === 1 || x === 5 && y === 4 ? '#FFC46B' : '#FFE3D3') },
+  '.scene[data-saison=automne]': {
+    wall: pxTile(16, 16, (x, y) => x === 15 ? '#FFC46B' : y === 15 ? '#F4B5E8' : '#FFE3D3'),
+    floor: boards(6, '#8E5BB5', '#74449B') },
+  '.scene[data-saison=hiver]': {
+    wall: pxTile(16, 16, (x, y) => x === 3 && y === 3 || x === 11 && y === 11 ? '#FFF7FE' : x === 12 && y === 4 ? '#BFF6FF' : '#D9F7FF'),
+    floor: boards(6, '#C9A6E4', '#8E5BB5') },
+};
+function roomCSS() { // une feuille de style générée : jour, puis nuit (body.night, plus précis)
+  let css = Object.entries(FLAT_PX).map(([sel, r]) => `${sel} .wall { background: ${r.wall}; } ${sel} .floor { background: ${r.floor}; box-shadow: none; }\n`).join('');
+  for (const [id, f] of Object.entries(ROOM_PX)) for (const n of [false, true]) {
+    const r = f(n), sel = `${n ? 'body.night ' : ''}[data-chambre=${id}]`;
+    css += `${sel} .wall { background: ${r.wall}; } ${sel} .floor { background: linear-gradient(${r.plinthe} 0 0) 0 0 / 100% ${2 * PX_EM}em no-repeat, ${r.floor}; box-shadow: ${r.glow ? `0 -2px 12px ${r.glow}` : 'none'}; } ${r.extra ? r.extra(sel) : ''}\n`;
+  }
+  document.head.insertAdjacentHTML('beforeend', `<style id="pxRooms">${css}</style>`);
+}
+const rugCache = {};
+const rugBg = c => `background: ${rugCache[c] ||= pxURL(60, 12, (x, y) => { // tapis rond en pixels : bord, liseré clair, centre
+  const d = ((x + .5 - 30) / 30) ** 2 + ((y + .5 - 6) / 6) ** 2, e = ((x + .5 - 30) / 25) ** 2 + ((y + .5 - 6) / 4.2) ** 2, f = ((x + .5 - 30) / 22) ** 2 + ((y + .5 - 6) / 3.2) ** 2;
+  return d > 1 ? '' : e > 1 ? mixHex(c, LINE, .35) : f > 1 ? mixHex(c, '#FFFFFF', .5) : c;
+})} center / 100% 100% no-repeat`;
 // Vues de la fenêtre
 const VIEWS = {
   ciel: { name: 'Ciel changeant', icon: '⛅', price: 0, desc: 'Soleil le jour, lune la nuit',
@@ -722,7 +885,7 @@ function roomHTML(trying, eqMain = S.equip, eqPartner = S.partnerEquip, view = S
   return `<div class="wall"></div><div class="floor"></div>
     <div class="window">${VIEWS[view].html()}<div class="rain"${view === 'orage' ? ' style="--rain:.9"' : ''}></div><div class="frame"></div></div>${SEASONS[season].base}
     ${on.map(id => DECOR[id].html || '').join('')}
-    ${rug ? `<div class="rug" style="background:${rug}"></div>` : ''}${petsHTML(S.species, S.partner, eqMain, eqPartner)}
+    ${rug ? `<div class="rug" style="${rugBg(rug)}"></div>` : ''}${petsHTML(S.species, S.partner, eqMain, eqPartner)}
     <button class="season-nav prev" data-season-step="-1" aria-label="Saison précédente">‹</button><button class="season-nav next" data-season-step="1" aria-label="Saison suivante">›</button>`;
 }
 
@@ -1463,7 +1626,7 @@ let tryRoom = null, tryView = null; // chambre et vue essayées dans la boutique
 // thèmes, chambres, vues : « ✓ Actif », « Utiliser » ou le prix
 const useBtn = (owned, active, attr, price) => active ? '<span class="owned">✓ Actif</span>' : owned ? `<button class="btn" ${attr}>Utiliser</button>` : buyBtn(attr, price);
 const decorItem = ([id, d]) =>
-  shopItem(`<button class="preview-btn ${tryDecor === id ? 'trying' : ''}" data-try-decor="${id}" aria-label="Essayer : ${d.name}">${d.rug ? `<span class="rug-swatch" style="background:${d.rug}"></span>` : `<span class="thumb">${thumb(d.icon)}</span>`}</button>`,
+  shopItem(`<button class="preview-btn ${tryDecor === id ? 'trying' : ''}" data-try-decor="${id}" aria-label="Essayer : ${d.name}">${d.rug ? `<span class="rug-swatch" style="${rugBg(d.rug)}"></span>` : `<span class="thumb">${thumb(d.icon)}</span>`}</button>`,
       d.name, `data-decor="${id}"`, S.decor.owned.includes(id), S.decor.on.includes(id), d.price, 'Ranger', 'Placer');
 const SHOP_CATS = { oeufs: '🥚 Œufs', accessoires: '👗 Accessoires', decor: '🏠 Décor', saisons: '🍂 Saisons', chambres: '🛏️ Chambres', vues: '🪟 Vues', ambiances: '🎧 Ambiances', utilitaires: '🧰 Utilitaires' };
 const SHOP = {
@@ -1510,7 +1673,8 @@ function equipOrBuy(listKey, curKey, id, item) { // achète si besoin, puis util
 }
 function renderShop() {
   const tc = tryOn && COSMETICS[tryOn.id], withTry = (eq, who) => tc && tryOn.who === who ? { ...eq, [tc.slot]: tryOn.id } : eq;
-  const season = DECOR[tryDecor]?.season ?? S.season; // essayer un objet de saison affiche sa saison
+  // essayer un objet de saison affiche sa saison ; essayer une chambre l'affiche sans saison (le mur de la saison la cacherait)
+  const season = DECOR[tryDecor]?.season ?? (tryRoom ? '' : S.season);
   Object.assign($('#decoScene').dataset, { chambre: tryRoom || S.room, saison: season });
   $('#decoScene .room').innerHTML = roomHTML(tryDecor, withTry(S.equip, 'main'), withTry(S.partnerEquip, 'partner'), tryView || S.view, season);
   VILLE.sync();
@@ -1852,6 +2016,7 @@ console.assert(Object.keys(EGGS).every(r => RARITY[r]) && Object.values(STREAK_R
 console.assert(COLL.length === 25 && ACH.length >= 20 && new Set(ACH.map(a => a.id)).size === ACH.length, 'collection et succès');
 console.assert(Object.values(EGGS).every(E => Math.abs(Object.values(E.odds).reduce((a, b) => a + b) - 1) < 1e-9), 'probabilités des œufs');
 console.assert(Object.values(DECOR).every(d => d.rug || SPR[d.icon]) && Object.values(SPR).every(r => r.join('').split('').every(ch => ch === '.' || PXC[ch])), 'dessins de la déco');
+console.assert(Object.keys(ROOM_PX).every(k => ROOMS[k]) && mixHex('#000000', '#FFFFFF', .5) === '#808080' && luma('#FFFFFF') > 254, 'chambres en pixel art et couleurs');
 console.assert(shuffle([1, 2, 3, 4, 5]).sort().join() === '1,2,3,4,5' && shuffle([]).length === 0, 'shuffle garde les cartes');
 console.assert(fmtMin(59) === '59 min' && fmtMin(125) === '2 h 05', 'fmtMin');
 
@@ -1892,6 +2057,7 @@ setInterval(() => { if (applyDecay()) renderAll(); if (T.pausedAt) { chargePause
 if (new Date().getDay() === 1 && S.reviewSeen !== today() && S.sessions.length) { // le lundi, le compagnon annonce son bilan
   S.reviewSeen = today(); bubble = 'J\'ai préparé ton bilan de la semaine, il t\'attend dans 📊 Stats !'; save();
 }
+roomCSS();
 renderAll();
 if (firstRun) { renderTuto(); $('#tuto').showModal(); }
 pullCloud(false, loadedAt); // connecté : récupère la copie en ligne si elle est plus récente que celle chargée, sinon envoie celle-ci
