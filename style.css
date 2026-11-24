@@ -97,6 +97,19 @@ select, input {
 
 /* ---------- la pièce ---------- */
 .scene-card { text-align: center; }
+/* poignée du bloc-notes déplaçable */
+.grip {
+  position: absolute; top: .6rem; right: .6rem; z-index: 3; width: 2rem; height: 2rem; border-radius: 50%;
+  border: 2px solid var(--line); background: var(--card); color: var(--ink); cursor: grab; touch-action: none; font-size: 1rem;
+}
+.grip:active { cursor: grabbing; background: var(--lav); color: var(--btn-ink); }
+body.night .grip:hover { box-shadow: 0 0 10px rgba(79, 227, 255, .55); }
+#notesDlg { position: fixed; inset: 12vh auto auto calc(50% - min(210px, 46vw)); margin: 0; z-index: 50; width: min(420px, 92vw); cursor: grab; user-select: none; touch-action: none; }
+#notesDlg:active { cursor: grabbing; }
+#notesDlg { overflow: visible; }
+#notesDlg::after { content: ''; position: absolute; left: -2px; right: -2px; bottom: -10px; height: 10px; } /* l'ombre du bas ne capte pas la souris : cette bande invisible, si */
+#notesDlg textarea { cursor: text; user-select: text; touch-action: auto; }
+#notesDlg .btn { cursor: pointer; }
 .modes { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; margin-bottom: .9rem; }
 .scene {
   position: relative; height: 400px; border-radius: 20px; overflow: hidden;

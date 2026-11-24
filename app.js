@@ -92,7 +92,7 @@ const DEFAULT = {
   eggs: [], hatched: 0, ach: [], freezes: 0, harvested: 0, bought: 0,
   sounds: ['lofi', 'rain', 'wind', 'cars'], theme: 'lavande', themes: ['lavande'],
   room: 'douce', rooms: ['douce'], season: '', view: 'ciel', views: ['ciel'],
-  tx: [], weekGoal: 5, exams: [], todos: [], cards: [], notes: '', font: 1, reviewSeen: null,
+  tx: [], weekGoal: 5, exams: [], todos: [], cards: [], notes: '', font: 1, reviewSeen: null, pos: {},
 };
 let S;
 const rawSave = store.raw('jardin'), firstRun = !rawSave;
@@ -1435,8 +1435,13 @@ document.addEventListener('click', e => {
     save(); renderStats();
   }
   if ('debriefOk' in ds) $('#debrief').close();
+  if ('notesClose' in ds) $('#notesDlg').close();
   if (b.id.startsWith('nightBtn')) { S.night = !S.night; save(); renderHeader(); }
-  if ('talk' in ds) {
+  if ('talk' in ds && T.running && T.phase === 'work') { // fenêtre libre (pas modale) : la chambre et le minuteur restent utilisables
+    const d = $('#notesDlg');
+    if (d.open) d.close(); else { $('#notesQuick').value = S.notes; d.show(); $('#notesQuick').focus(); }
+  }
+  else if ('talk' in ds) {
     talk(); renderTimer();
     const a = animOf(S.species); // animation débloquée par l'amitié
     if (a) { b.classList.remove(`anim-${a}`); void b.offsetWidth; b.classList.add(`anim-${a}`); setTimeout(() => b.classList.remove(`anim-${a}`), 1300); }
@@ -1592,7 +1597,29 @@ $('#cardForm').addEventListener('submit', e => {
   $('#cardQ').value = $('#cardA').value = ''; $('#cardQ').focus(); save(); renderTools();
 });
 let notesTimer;
-$('#notes').addEventListener('input', e => { S.notes = e.target.value; clearTimeout(notesTimer); notesTimer = setTimeout(save, 400); });
+$$('#notes, #notesQuick').forEach(t => t.addEventListener('input', e => { S.notes = e.target.value; clearTimeout(notesTimer); notesTimer = setTimeout(save, 400); }));
+$('#notesDlg').addEventListener('close', () => { $('#notes').value = S.notes; });
+
+// ---------- Bloc-notes déplaçable : on l'attrape n'importe où sur son cadre (position sauvegardée) ----------
+if (!S.pos || typeof S.pos !== 'object') S.pos = {};
+function movable(el, key) {
+  const grip = el.querySelector('.grip'), handle = el, place = ([x, y]) => { S.pos[key] = [x, y]; el.style.translate = `${x}px ${y}px`; };
+  let from = null;
+  place(Array.isArray(S.pos[key]) ? S.pos[key] : [0, 0]);
+  handle.addEventListener('pointerdown', e => {
+    if (e.target.closest('textarea, input, select, button:not(.grip)')) return; // on peut toujours écrire et cliquer
+    from = [e.clientX - S.pos[key][0], e.clientY - S.pos[key][1]]; handle.setPointerCapture(e.pointerId);
+  });
+  handle.addEventListener('pointermove', e => { if (from) place([e.clientX - from[0], e.clientY - from[1]]); });
+  handle.addEventListener('pointerup', () => { if (from) save(); from = null; });
+  grip.addEventListener('dblclick', () => { place([0, 0]); save(); }); // ramène la fenêtre à sa place si elle est sortie de l'écran
+  grip.addEventListener('keydown', e => {
+    const d = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }[e.key]; if (!d) return;
+    e.preventDefault(); place([S.pos[key][0] + d[0], S.pos[key][1] + d[1]]); save();
+  });
+}
+delete S.pos.chambre; // ancienne position de la chambre, qui n'est plus déplaçable
+movable($('#notesDlg'), 'notes');
 $('#weekGoal').addEventListener('change', e => {
   const v = Math.round(+e.target.value);
   if (v >= 1 && v <= 80) { S.weekGoal = v; save(); }
