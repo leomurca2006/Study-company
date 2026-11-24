@@ -1063,6 +1063,7 @@ const VILLE = (() => {
 // createMediaElementSource les rendrait muets (restriction d'origine).
 let AC;
 const MIX = {};
+const listenT = {}; // minuteurs des extraits écoutés dans la boutique
 const ctx = () => { AC ||= new AudioContext(); if (AC.state === 'suspended') AC.resume(); return AC; };
 function noise(brown) {
   const a = ctx(), n = a.sampleRate * 3, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
@@ -1112,8 +1113,8 @@ function track(files) { // un fichier en boucle, ou plusieurs enchaînés dans u
   el.addEventListener('ended', () => { el.src = list[++i % list.length]; el.play().catch(() => {}); });
   return el;
 }
-function setVol(k, v) {
-  S.vol[k] = v;
+function setVol(k, v, keep = true) { // keep = false : extrait de la boutique, le volume réglé par le joueur ne change pas
+  if (keep) S.vol[k] = v;
   if (k === 'rain') document.body.style.setProperty('--rain', v ? 0.4 + v * 0.6 : 0);
   if (SOUNDS[k].files) { // le fichier n'est chargé que la première fois qu'on monte son volume
     if (v > 0 && !MIX[k]) MIX[k] = track(SOUNDS[k].files);
@@ -1831,7 +1832,10 @@ document.addEventListener('click', e => {
   }
   if (ds.hatch) hatch(+ds.hatch);
   if ('hatchOk' in ds) $('#hatchDlg').close();
-  if (ds.listen) { const k = ds.listen, v = S.vol[k] || 0; setVol(k, 0.6); setTimeout(() => setVol(k, v), 4000); }
+  if (ds.listen) { // extrait de 4 s, puis retour au volume du joueur (relu à la fin : un second clic ne le fige plus)
+    const k = ds.listen; clearTimeout(listenT[k]); setVol(k, 0.6, false);
+    listenT[k] = setTimeout(() => setVol(k, S.vol[k] || 0), 4000);
+  }
   if (ds.sound) {
     const a = AMBIANCES[ds.sound];
     if (S.sounds.includes(ds.sound) || !buy(a.price, a.name)) return;
@@ -2041,6 +2045,7 @@ for (const eq of [S.equip, S.partnerEquip]) for (const k in eq) if (eq[k] && !CO
 if (!(S.season in SEASONS)) S.season = '';
 S.decor.owned = S.decor.owned.filter(id => DECOR[id]); S.decor.on = S.decor.on.filter(id => DECOR[id]);
 S.eggs = S.eggs.filter(e => EGGS[e?.type]); S.sounds = S.sounds.filter(k => AMBIANCES[k]);
+for (const k in S.vol) if (!S.sounds.includes(k)) S.vol[k] = 0; // un son pas acheté ne joue jamais (son curseur est caché ; ancien bug des extraits de la boutique)
 delete S.plots; delete S.inv; delete S.harvested; // l'ancien jardin a été retiré
 S.ach = S.ach.filter(id => ACH.some(a => a.id === id)); // succès retirés (ex. « Main verte » du jardin)
 if (!THEMES[S.theme]) S.theme = 'lavande';
