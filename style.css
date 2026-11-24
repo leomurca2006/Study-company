@@ -34,7 +34,7 @@ body {
 body.night { background: radial-gradient(ellipse at 50% 115%, rgba(255, 79, 216, .28), transparent 60%) fixed, linear-gradient(180deg, var(--bg1), var(--bg2) 60%, #4B1A72) fixed; }
 body.night .tabs button.active, body.night .modes button.active { box-shadow: 0 0 10px rgba(255, 79, 216, .55); }
 body.night .card { box-shadow: 0 6px 0 var(--shadow), 0 0 0 1px rgba(79, 227, 255, .08); }
-h1, h2 { font-family: Fredoka, Nunito, sans-serif; margin: 0 0 .7rem; font-weight: 600; }
+h1, h2 { margin: 0 0 .7rem; font-weight: 800; }
 h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); }
 h2 { font-size: 1.2rem; }
 button { font: inherit; cursor: pointer; color: inherit; }
@@ -161,7 +161,7 @@ body.night .cloud { opacity: .2; }
 
 .timer { position: absolute; top: 10px; left: 0; right: 0; }
 #phase { font-weight: 800; font-size: .9rem; color: var(--soft); }
-#time { font-family: Fredoka, sans-serif; font-weight: 700; font-size: clamp(2.6rem, 8vw, 3.4rem); line-height: 1.05; }
+#time { font-weight: 900; font-variant-numeric: tabular-nums; font-size: clamp(2.6rem, 8vw, 3.4rem); line-height: 1.05; }
 .tbar { width: 46%; height: 8px; margin: .3rem auto 0; border-radius: 8px; background: #fff8; overflow: hidden; }
 .tbar i { display: block; height: 100%; width: 0; background: var(--pink-d); border-radius: 8px; transition: width .3s; }
 .tbar.break i { background: var(--mint-d); }
@@ -248,7 +248,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
 .stat { background: var(--bg1); border-radius: 16px; padding: .6rem; text-align: center; font-size: .85rem; }
-.stat b { display: block; font-size: 1.45rem; font-family: Fredoka, sans-serif; }
+.stat b { display: block; font-size: 1.45rem; font-weight: 800; }
 
 /* ---------- pingouin ---------- */
 .pet-card { text-align: center; }
@@ -261,7 +261,7 @@ input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 
 .field.left { justify-content: flex-start; }
 .rug-swatch { display: block; width: 60px; height: 26px; margin: 1rem 0; image-rendering: pixelated; }
 .item .emoji { font-size: 2.2rem; line-height: 70px; }
-.slot-title { margin: 1rem 0 .5rem; font-family: Fredoka, sans-serif; color: var(--soft); }
+.slot-title { margin: 1rem 0 .5rem; font-weight: 800; color: var(--soft); }
 .grid { display: flex; flex-wrap: wrap; gap: .6rem; }
 .item {
   border: 2px solid var(--line); background: var(--bg1); border-radius: 18px; padding: .6rem .7rem;
@@ -397,7 +397,7 @@ i.l1 { background: #E7CFF5; } i.l2 { background: #C9A6E4; } i.l3 { background: #
 .review-row p { margin: 0; line-height: 1.5; }
 .review-pet { width: 90px; flex: none; }
 .review-pet svg { width: 100%; }
-.countdown { font-family: Fredoka, sans-serif; font-weight: 700; min-width: 4.6rem; text-align: center; background: var(--pink); color: var(--btn-ink); border-radius: 14px; padding: .35rem .5rem; }
+.countdown { font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4.6rem; text-align: center; background: var(--pink); color: var(--btn-ink); border-radius: 14px; padding: .35rem .5rem; }
 #examForm label { display: flex; align-items: center; gap: .3rem; font-weight: 700; }
 #examForm input[type=number], #weekGoal { width: 4.5rem; }
 

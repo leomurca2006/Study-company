@@ -1,4 +1,4 @@
--- Jardin d'Étude : sauvegardes en ligne.
+-- Chambre d'Étude : sauvegardes en ligne.
 -- À coller une fois dans Supabase › SQL Editor › New query, puis « Run ».
 
 -- Une ligne par joueur : toute sa sauvegarde (l'objet S du site) en JSON.

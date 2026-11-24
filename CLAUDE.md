@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"Jardin d'Étude": a gamified study timer (pomodoro / free countdown / stopwatch) with missions, monthly events, eggs to hatch, flashcards, a companion pet with cosmetics, room decoration and a generated lofi ambience. Static site, vanilla HTML/CSS/JS, no build, no dependencies (only Google Fonts). All UI text is in French; keep it that way.
+"Chambre d'Étude" (formerly "Jardin d'Étude"; the `localStorage` keys keep the old `jardin…` names so saves survive): a gamified study timer (pomodoro / free countdown / stopwatch) with missions, monthly events, eggs to hatch, flashcards, a companion pet with cosmetics, room decoration and a generated lofi ambience. Static site, vanilla HTML/CSS/JS, no build, no dependencies (only Google Fonts). All UI text is in French; keep it that way.
 
 ## Game rules (the player's spec, all implemented; keep them true)
 
@@ -114,6 +114,7 @@ Single script, organised top to bottom:
 ## CSS (style.css)
 
 - Theming uses CSS variables on `:root`; the night mode is `body.night`, which overrides them. Colour themes (`body.theme-*`) only override accent variables, so they combine with night mode.
+- The only font is Nunito (Google Fonts, weights 400–900), set on `body` and inherited everywhere: headings use weight 800, the timer 900 with `tabular-nums`. Do not add another family.
 - `[hidden]` is forced to `display: none !important`, so the `hidden` attribute works on grid/flex components.
 - Buttons use the fixed `--btn-ink` so pastel buttons stay readable in both themes.
 - The rain overlay opacity comes from `--rain`, which `setVol` sets on `body`. The `orage` view forces it high.

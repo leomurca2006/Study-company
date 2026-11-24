@@ -84,7 +84,7 @@ const DEFAULT = {
   tx: [], weekGoal: 5, exams: [], todos: [], cards: [], notes: '', font: 1, reviewSeen: null, pos: {},
 };
 let S;
-const rawSave = store.raw('jardin'), firstRun = !rawSave;
+const rawSave = store.raw('jardin'), firstRun = !rawSave; // clés « jardin… » : ancien nom du site, gardées pour ne pas perdre les sauvegardes
 try { S = { ...structuredClone(DEFAULT), ...JSON.parse(rawSave || '{}') }; }
 catch { S = structuredClone(DEFAULT); store.set('jardin_corrompu', rawSave); } // garde une copie avant d'écraser
 S.cfg = { ...DEFAULT.cfg, ...S.cfg }; S.vol = { ...DEFAULT.vol, ...S.vol }; delete S.mood; delete S.moodAt; // anciens formats de sauvegarde
@@ -519,7 +519,7 @@ const curStreak = () => S.streak.last && dayNum(today()) - dayNum(S.streak.last)
 // Répliques : au moins 5 par situation, {n} = nom du compagnon, {p} = nom de Perle
 const LINES = {
   hello: ['Bienvenue ! Je suis tellement content de te voir 🌷', 'Coucou ! Prêt·e pour une belle session ? ✨', 'Te voilà ! J\'avais gardé ton livre au chaud 📚',
-    'Bonjour toi ! On fait éclore un œuf aujourd\'hui ? 🥚', 'Bienvenue au jardin ! Installe-toi, je prépare le thé 🍵'],
+    'Bonjour toi ! On fait éclore un œuf aujourd\'hui ? 🥚', 'Bienvenue dans ta chambre ! Installe-toi, je prépare le thé 🍵'],
   idle:['Coucou, c\'est {n} !', 'On révise ensemble ? 📚', 'Tu vas tout déchirer 💪', 'Une petite tisane et on s\'y remet 🍵',
     'N\'oublie pas de valider ta journée 🔥', 'J\'aime bien quand il pleut dehors 🌧️', 'Chaque minute compte ✨'],
   partner: ['{p} est trop fière de toi 💕', '{p} et moi, on t\'encourage !'],
@@ -1235,7 +1235,7 @@ function endFocus(full) { // fin d'une session de concentration : gains, histori
 }
 function notify(msg) {
   if (!document.hidden || window.Notification?.permission !== 'granted') return;
-  try { new Notification('Jardin d\'Étude', { body: msg }); } catch {}
+  try { new Notification('Chambre d\'Étude', { body: msg }); } catch {}
 }
 function beep() {
   if (!S.alertVol) return;
@@ -1291,7 +1291,7 @@ function renderTimer() {
   $('#stopBtn').disabled = T.phase === 'work' && !T.started;
   $('#subjectSelect').disabled = $('#goalInput').disabled = T.started && T.phase === 'work';
   const label = T.phase !== 'work' ? 'Pause' : S.subjects.find(s => s.id == T.sub)?.name || 'Révision';
-  document.title = T.started ? `${fmt(shown)} – ${label}` : "Jardin d'Étude";
+  document.title = T.started ? `${fmt(shown)} – ${label}` : "Chambre d'Étude";
 }
 function petState() { // repos, révise, pause, content, endormi, triste doux
   if (T.running) return T.phase === 'work' ? 'studying' : 'resting';
@@ -1483,7 +1483,7 @@ function renderSettings() {
 function exportSave() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }));
-  a.download = `jardin-etude-${today()}.json`; a.click();
+  a.download = `chambre-etude-${today()}.json`; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 async function importSave(file) {
@@ -1491,7 +1491,7 @@ async function importSave(file) {
   try { data = JSON.parse(await file.text()); } catch {}
   const arrays = ['subjects', 'sessions', 'pets', 'eggs', 'ach', 'owned', 'todos', 'cards', 'exams', 'tx', 'rooms', 'views'];
   if (!data || typeof data !== 'object' || typeof data.coins !== 'number' || !Array.isArray(data.subjects) || arrays.some(k => k in data && !Array.isArray(data[k])))
-    return toast('Ce fichier ne ressemble pas à une sauvegarde du Jardin 🤔');
+    return toast("Ce fichier ne ressemble pas à une sauvegarde de la Chambre d'Étude 🤔");
   if (!confirm('Remplacer toutes tes données actuelles par cette sauvegarde ?')) return;
   data.savedAt = Date.now(); // plus récente que la copie en ligne : c'est elle qui sera envoyée au compte
   if (!store.set('jardin', JSON.stringify(data))) return toast('⚠️ Impossible d\'enregistrer dans ce navigateur');
@@ -1504,7 +1504,7 @@ const tuto = { step: 0, pick: 'pingouin', name: null };
 const PALETTE = ['#FF8FE6', '#4FE3FF', '#C9A6E4', '#FFC46B', '#8FF0FF', '#FF4FD8'];
 function renderTuto() {
   $('#tutoBody').innerHTML = `<p class="hint">Étape ${tuto.step + 1} / 3</p>` + [
-    `<h2 id="tutoTitle">🌷 Bienvenue au Jardin d'Étude</h2>
+    `<h2 id="tutoTitle">🌷 Bienvenue dans la Chambre d'Étude</h2>
       <p>Ici, tu révises avec un minuteur et un petit compagnon qui t'encourage.</p>
       <p>⏱️ Chaque minute de révision rapporte des pièces 🪙, fait couver tes œufs 🥚 et renforce votre amitié 💗.</p>
       <p>💗 10 min de révision = 10 % d'un niveau d'amitié. Mais attention : après ${CFG.decayHours} h sans réviser, ton compagnon perd ${CFG.decayRate * 100} % de son amitié.</p>
