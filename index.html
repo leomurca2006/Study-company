@@ -256,8 +256,29 @@
       <p class="hint">Le mode nuit se change avec le bouton 🌙 en haut, les sons et le son de fin dans l'onglet Outils, les thèmes de couleurs dans la Boutique.</p>
     </div>
     <div class="card">
+      <h2>☁️ Compte en ligne</h2>
+      <p class="hint" id="cloudOff">Le compte en ligne n'est pas encore configuré sur ce site.</p>
+      <form id="loginForm" class="stack">
+        <p class="hint">Connecte-toi pour sauvegarder ta progression en ligne et la retrouver sur tous tes appareils.</p>
+        <input id="loginEmail" type="email" autocomplete="email" maxlength="120" placeholder="E-mail" required aria-label="E-mail">
+        <input id="loginPass" type="password" autocomplete="current-password" minlength="6" maxlength="72" placeholder="Mot de passe (6 caractères min.)" required aria-label="Mot de passe">
+        <div class="row">
+          <button class="btn primary">Se connecter</button>
+          <button class="btn" type="button" id="signupBtn">Créer un compte</button>
+        </div>
+      </form>
+      <div id="cloudIn" hidden>
+        <p><b id="cloudWho"></b></p>
+        <p class="hint" id="cloudStatus" role="status"></p>
+        <div class="row">
+          <button class="btn" id="syncBtn">🔄 Synchroniser</button>
+          <button class="btn" id="logoutBtn">Se déconnecter</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
       <h2>💾 Sauvegarde</h2>
-      <p class="hint">Tes données restent dans ce navigateur. Exporte-les de temps en temps pour les garder en sécurité ou les passer sur un autre appareil.</p>
+      <p class="hint">Tes données sont gardées dans ce navigateur (et sur ton compte si tu es connecté). Tu peux aussi les exporter dans un fichier.</p>
       <div class="row">
         <button class="btn primary" id="exportBtn">⬇️ Exporter</button>
         <button class="btn" id="importBtn">⬆️ Importer</button>

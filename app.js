@@ -61,7 +61,7 @@ const fmt = s => {
 const fmtMin = m => (m = Math.round(m)) >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}` : `${m} min`;
 
 // ---------- Stockage ----------
-// Seul endroit qui touche localStorage : pour un backend (Supabase, Firebase…), remplacer ces deux fonctions.
+// Seul endroit qui touche localStorage. La copie en ligne (compte Supabase) est gérée plus bas, dans « Compte en ligne ».
 const store = {
   raw: k => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } },
@@ -88,10 +88,88 @@ const rawSave = store.raw('jardin'), firstRun = !rawSave;
 try { S = { ...structuredClone(DEFAULT), ...JSON.parse(rawSave || '{}') }; }
 catch { S = structuredClone(DEFAULT); store.set('jardin_corrompu', rawSave); } // garde une copie avant d'écraser
 S.cfg = { ...DEFAULT.cfg, ...S.cfg }; S.vol = { ...DEFAULT.vol, ...S.vol }; delete S.mood; delete S.moodAt; // anciens formats de sauvegarde
+const loadedAt = S.savedAt || 0; // date de la copie chargée, avant toute modification au démarrage
 let saveWarned = false;
 const save = () => { // localStorage peut être plein ou indisponible (navigation privée…) : on prévient une fois
+  S.savedAt = Date.now(); // sert à savoir quelle copie est la plus récente (cet appareil ou le compte en ligne)
   if (!store.set('jardin', JSON.stringify(S)) && !saveWarned) { saveWarned = true; toast('⚠️ Sauvegarde impossible dans ce navigateur : pense à exporter tes données (Réglages)'); }
+  if (auth) { clearTimeout(pushT); pushT = setTimeout(pushCloud, 4000); } // envoi groupé vers le compte
 };
+
+// ---------- Compte en ligne (Supabase : comptes e-mail + table « saves », voir supabase.sql) ----------
+// À remplir avec Project Settings › API de ton projet : l'URL et la clé publique (anon / publishable). Vide = pas de compte en ligne.
+const CLOUD = { url: 'https://vyxgjihjbukpwoytomux.supabase.co', key: 'sb_publishable_ydN79sJDSeJltvu5yjneWw_GGN8B6aq' }; // clé publique : faite pour être visible
+const cloudOn = () => !!(CLOUD.url && CLOUD.key);
+let auth = null, pushT = null, cloudMsg = ''; // auth = session { access, refresh, exp, email, id }, gardée dans localStorage['jardin_auth']
+let cloudReady = false; // aucun envoi avant d'avoir comparé avec la copie en ligne (sinon un appareil en retard l'écraserait)
+try { auth = cloudOn() && JSON.parse(store.raw('jardin_auth')) || null; } catch {}
+async function sb(path, opts = {}) { // requête vers Supabase ; le jeton de session est joint quand on est connecté
+  const headers = { apikey: CLOUD.key, 'Content-Type': 'application/json', ...(auth && !opts.anon ? { Authorization: `Bearer ${auth.access}` } : {}), ...opts.headers };
+  const r = await fetch(CLOUD.url.replace(/\/$/, '') + path, { ...opts, headers });
+  const body = await r.json().catch(() => null);
+  if (!r.ok) throw Object.assign(new Error(body?.msg || body?.error_description || body?.message || `erreur ${r.status}`), { status: r.status });
+  return body;
+}
+function setAuth(t) { // t = réponse de /auth/v1/token ou /auth/v1/signup ; null = déconnexion
+  auth = t && { access: t.access_token, refresh: t.refresh_token, exp: Date.now() + t.expires_in * 1000, email: t.user.email, id: t.user.id };
+  store.set('jardin_auth', JSON.stringify(auth));
+}
+async function freshAuth() { // le jeton dure 1 h : on le renouvelle une minute avant
+  if (auth && Date.now() > auth.exp - 60e3)
+    setAuth(await sb('/auth/v1/token?grant_type=refresh_token', { method: 'POST', anon: true, body: JSON.stringify({ refresh_token: auth.refresh }) }));
+}
+const AUTH_ERR = { 'Invalid login credentials': 'E-mail ou mot de passe incorrect', 'Email not confirmed': 'Confirme d\'abord ton e-mail avec le lien reçu',
+  'User already registered': 'Un compte existe déjà avec cet e-mail : connecte-toi' };
+async function login(email, password, signup) {
+  try {
+    const t = await sb(signup ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method: 'POST', anon: true, body: JSON.stringify({ email, password }) });
+    if (!t.access_token) return toast('📧 Compte créé ! Clique sur le lien reçu par e-mail, puis connecte-toi.'); // confirmation d'e-mail activée
+    setAuth(t); $('#loginPass').value = ''; toast(`☁️ Connecté : ${auth.email}`);
+    await pullCloud(true);
+  } catch (e) { toast(`⚠️ ${AUTH_ERR[e.message] || e.message}`); }
+}
+function logout() { setAuth(null); clearTimeout(pushT); cloudMsg = ''; cloudReady = false; renderCloud(); }
+// La copie la plus récente gagne (base = date de la copie locale à comparer). À la connexion, on demande plutôt,
+// car un appareil neuf a une sauvegarde « récente » mais vide.
+// shortcut: le dernier qui écrit gagne, sans fusion ; à revoir si on joue sur deux appareils ouverts en même temps.
+async function pullCloud(atLogin, base = S.savedAt || 0) {
+  if (!auth || !cloudOn()) return;
+  try {
+    await freshAuth();
+    const [row] = await sb('/rest/v1/saves?select=data');
+    const useCloud = row && (atLogin
+      ? confirm(`Une sauvegarde existe déjà sur ton compte (${row.data.coins} 🪙, ${fmtMin(row.data.totalMin || 0)} de révision).\n\nOK : la charger sur cet appareil.\nAnnuler : la remplacer par la progression de cet appareil.`)
+      : (row.data.savedAt || 0) > base);
+    if (useCloud) {
+      store.set('jardin', JSON.stringify(row.data));
+      if (atLogin) store.set('jardin_timer', 'null'); // le minuteur en cours appartenait à l'autre sauvegarde
+      return location.reload();
+    }
+    cloudReady = true;
+    await pushCloud();
+  } catch (e) { cloudFail(e); }
+}
+async function pushCloud() {
+  clearTimeout(pushT);
+  if (!auth || !cloudOn()) return;
+  if (!cloudReady) return pullCloud(false, loadedAt); // la vérification du démarrage n'a pas abouti (hors ligne…) : on la refait d'abord
+  try {
+    await freshAuth();
+    await sb('/rest/v1/saves', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ user_id: auth.id, data: S, updated_at: new Date().toISOString() }) });
+    cloudMsg = `✅ Synchronisé à ${new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })}`;
+  } catch (e) { cloudFail(e); }
+  renderCloud();
+}
+function cloudFail(e) { // session refusée : on se déconnecte ; sinon (hors ligne…) on garde tout sur l'appareil
+  if (e.status === 401 || /refresh token|JWT/i.test(e.message)) { logout(); toast('🔒 Ta session a expiré : reconnecte-toi dans Réglages ⚙️'); }
+  else cloudMsg = `⚠️ Synchro impossible pour l'instant (${e.message}). Tes données restent sur cet appareil.`;
+  renderCloud();
+}
+function renderCloud() {
+  $('#cloudOff').hidden = cloudOn(); $('#loginForm').hidden = !cloudOn() || !!auth; $('#cloudIn').hidden = !auth;
+  if (auth) { $('#cloudWho').textContent = `Connecté : ${auth.email}`; $('#cloudStatus').textContent = cloudMsg || 'Synchronisation…'; }
+}
 function dayStats() {
   const d = today();
   if (!S.day || S.day.date !== d) S.day = { date: d, minutes: 0, pomos: 0, subjects: [], claimed: [] };
@@ -1232,7 +1310,7 @@ function renderTools() {
 
 // ---------- Réglages ----------
 function renderSettings() {
-  $('#fontSize').value = S.font;
+  $('#fontSize').value = S.font; renderCloud();
   $('#txList').innerHTML = S.tx.length ? S.tx.slice(0, 100).map(t => `<div class="tx"><small>${new Date(t.at).toLocaleString('fr', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small>
     <span>${esc(t.why)}</span><b>${t.n > 0 ? '+' : '−'}${Math.abs(t.n)} 🪙</b></div>`).join('')
     : '<p class="empty-msg">Aucune transaction pour l\'instant.</p>';
@@ -1250,6 +1328,7 @@ async function importSave(file) {
   if (!data || typeof data !== 'object' || typeof data.coins !== 'number' || !Array.isArray(data.subjects) || arrays.some(k => k in data && !Array.isArray(data[k])))
     return toast('Ce fichier ne ressemble pas à une sauvegarde du Jardin 🤔');
   if (!confirm('Remplacer toutes tes données actuelles par cette sauvegarde ?')) return;
+  data.savedAt = Date.now(); // plus récente que la copie en ligne : c'est elle qui sera envoyée au compte
   if (!store.set('jardin', JSON.stringify(data))) return toast('⚠️ Impossible d\'enregistrer dans ce navigateur');
   store.set('jardin_timer', 'null');
   location.reload();
@@ -1565,6 +1644,9 @@ document.addEventListener('click', e => {
   if ('deckRetry' in ds) openDeck(deck.sub, deck.ko);
   if ('deckStop' in ds) $('#deckDlg').close();
   if (ds.cardDel) { S.cards = S.cards.filter(c => c.id != ds.cardDel); save(); renderTools(); }
+  if (b.id === 'signupBtn' && $('#loginForm').reportValidity()) login($('#loginEmail').value.trim(), $('#loginPass').value, true);
+  if (b.id === 'syncBtn') { cloudMsg = ''; renderCloud(); cloudReady ? pullCloud(false) : pullCloud(false, loadedAt); }
+  if (b.id === 'logoutBtn') { logout(); toast('Déconnecté. Tes données restent sur cet appareil.'); }
   if (b.id === 'exportBtn') exportSave();
   if (b.id === 'importBtn') $('#importFile').click();
   if (ds.tutoPick) { tuto.pick = ds.tutoPick; tuto.name = null; renderTuto(); }
@@ -1678,6 +1760,8 @@ let notesTimer;
 $$('#notes, #notesQuick').forEach(t => t.addEventListener('input', e => { S.notes = e.target.value; clearTimeout(notesTimer); notesTimer = setTimeout(save, 400); }));
 $('#notesDlg').addEventListener('close', () => { $('#notes').value = S.notes; });
 $('#deckDlg').addEventListener('close', () => { deck = null; renderTools(); }); // ✕, « M'arrêter là » ou Échap
+$('#loginForm').addEventListener('submit', e => { e.preventDefault(); login($('#loginEmail').value.trim(), $('#loginPass').value, false); });
+addEventListener('visibilitychange', () => { if (document.hidden && pushT) pushCloud(); }); // envoie tout de suite ce qui attendait
 
 // ---------- Bloc-notes déplaçable : on l'attrape n'importe où sur son cadre (position sauvegardée) ----------
 if (!S.pos || typeof S.pos !== 'object') S.pos = {};
@@ -1817,3 +1901,4 @@ if (new Date().getDay() === 1 && S.reviewSeen !== today() && S.sessions.length) 
 }
 renderAll();
 if (firstRun) { renderTuto(); $('#tuto').showModal(); }
+pullCloud(false, loadedAt); // connecté : récupère la copie en ligne si elle est plus récente que celle chargée, sinon envoie celle-ci
