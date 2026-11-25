@@ -421,8 +421,10 @@ function petVec(sp, eq, layer, wrap = true) {
       <path d="M100 56C140 56 162 100 162 140C162 186 136 208 100 208C64 208 38 186 38 140C38 100 60 56 100 56Z" fill="${P.body}"/></g>
       <g stroke="none">${P.belly}</g><g stroke="${MAGIC}" stroke-width="6"><ellipse cx="76" cy="206" rx="17" ry="8" fill="${P.feet}"/><ellipse cx="124" cy="206" rx="17" ry="8" fill="${P.feet}"/></g>${P.face}<g stroke="${MAGIC}" stroke-width="4" stroke-linejoin="round">${eq.tete ? '' : P.hair || ''}</g>`,
     cos: `<g stroke="${MAGIC}" stroke-width="4" stroke-linejoin="round">${cos('cou')}${cos('yeux')}${cos('tete')}</g>`,
-    // livre ouvert : couverture magenta autour des pages, pour qu'il se voie sur tous les ventres clairs
-    book: `<path d="M56 167L100 175L144 167L144 203L100 211L56 203Z" fill="#FF4FD8" stroke="${MAGIC}" stroke-width="6" stroke-linejoin="round"/><path d="M66 172L100 179L134 172L134 197L100 204L66 197Z" fill="#FFF7FE"/><path d="M100 179V204" stroke="#C9A6E4" stroke-width="4"/>`,
+    // livre ouvert : couverture magenta autour des pages, pour qu'il se voie sur tous les ventres clairs. Profondeur : pages qui
+    // plongent vers le creux de la reliure, tranche des pages en bas, épaisseur de la couverture (lumière en haut à gauche)
+    book: cells(8, 26, ['..wwwww..wwwww..', 'hmwwwwwsswwwwwmd', 'hmwwwwsggswwwwmd', 'hmwwwwsggswwwwmd', 'hmwwwwwggwwwwsmd', 'hmeeeeeggeeeeemd', 'hmmmmmmmmmmmmmmd', '.dddddddddddddd.'],
+      { h: '#FF8FE6', m: '#FF4FD8', d: '#C2329F', w: '#FFF7FE', s: '#F1E2FA', g: '#C9A6E4', e: '#D9BDEE' }),
   }[layer];
   if (!wrap) return g;
   // une case de marge autour des 200 × 220 du dessin, pour le contour
