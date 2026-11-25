@@ -634,6 +634,28 @@ SPR.perle = ['.k.', 'kkk', 'PPP', 'PwP', 'PPP', '.P.']; // ampoule de la guirlan
 SPR.coeurMini = ['.kk.kk.', 'kPPkPPk', 'kPwPPPk', 'kPPPPPk', '.kPPPk.', '..kPk..', '...k...'];
 SPR.zed = ['CCCCCCC', 'CCCCCCC', '....CC.', '...CC..', '..CC...', '.CC....', 'CCCCCCC', 'CCCCCCC']; // Z épais en cyan néon, lisible le jour comme la nuit
 SPR.etoile = ['..k..', '.kyk.', 'kyyyk', '.kyk.', '..k..'];
+// objets de la boutique ajoutés avec les nouvelles chambres
+Object.assign(SPR, {
+  tourneDisque: ['...kkkkkkk....', '..kKKKKKKKk.k.', '.kKKKPPKKKKkok', '.kKKKPPKKKKk.k', '..kKKKKKKKk..k', 'kkkkkkkkkkkkkk', 'koooooooooooOk', 'kooPoooooooyOk', 'kkkkkkkkkkkkkk'],
+  lampeLave: ['..kk..', '.kuuk.', '.kPPk.', 'kPpPPk', 'kPPPpk', 'kpPPPk', 'kPPpPk', 'kPPPPk', '.kPPk.', '.kuuk.', 'kuuuuk', 'kuuuuk', 'kkkkkk'],
+  monstera: ['....kkk.kkk..', '...kgggkgggk.', '..kgghgkghggk', '.kggggkgggggk', 'kghggkggghggk', 'kgggkgggggk..', '.kgkggGggk...', '..kkgGGgk....', '....kGGk.....', '....kGk......', '..kkkkkkk....', '..kvvvvvk....', '..kLLLLLk....', '...kvvvk.....', '...kkkkk.....'],
+  globe: ['..kkkkk..', '.kccgcck.', 'kcgggccck', 'kcccggcck', 'kgccccggk', '.kccgcck.', '..kkkkk..', '....k....', '...kOk...', '.kkkkkkk.', '.kOOOOOk.', '.kkkkkkk.'],
+  telescope: ['..........kk', '........kkck', '......kkLLk.', '....kkLLvk..', '..kkLLLvk...', '.kLLLLvkk...', 'kCLLvkk.....', '.kkkkk......', '...kk.......', '..k.k.......', '..k..k......', '.k...k......', '.k....k.....'],
+  arcade: ['.kkkkkkkk.', '.kPPPPPPk.', '.kkkkkkkk.', '.kKKKKKKk.', '.kKCCCCKk.', '.kKCyCCKk.', '.kKCCCCKk.', '.kKKKKKKk.', 'kkkkkkkkkk', 'kuPuuuCuuk', 'kkkkkkkkkk', '.kuuuuuuk.', '.kuuuuuuk.', '.kuPPPPuk.', '.kuuuuuuk.', '.kkkkkkkk.'],
+  ordi: ['.kkkkkkkkkk.', '.kwwwwwwwwk.', '.kwKKKKKKwk.', '.kwKgKKKKwk.', '.kwKggKKKwk.', '.kwKKKKKKwk.', '.kwwwwwwwok.', '.kkkkkkkkkk.', '...kwwwwk...', 'kkkkkkkkkkkk', 'kwkwkwkwkwkk', 'kkkkkkkkkkkk'],
+  liege: ['kkkkkkkkkkkkkk', 'koOOOOOOOOOOok', 'kOyyyOOOOpppOk', 'kOyyyOcccpppOk', 'kOyyyOcccpppOk', 'kOOOOOcccOOOOk', 'kOpppOOOOyyyOk', 'kOpppOOOOyyyOk', 'koOOOOOOOOOOok', 'kkkkkkkkkkkkkk'],
+  neonLune: ['..PPPP..', '.PP.....', 'PP......', 'P.......', 'P.......', 'PP......', '.PP...P.', '..PPPP..'],
+  pouf: ['..kkkkkk..', '.kppppppk.', 'kpPppPpppk', 'kppppppppk', 'kpppPppPpk', '.kkkkkkkk.'],
+  bonsai: ['..kkk.kkk..', '.kgGgkgGgk.', 'kgGgggggGgk', '.kkgkkkgkk.', '...kOOk....', '....kOk....', '....kOOk...', '.kkkkkkkkk.', '.kRRRRRRRk.', '..kkkkkkk..'],
+  planetes: ['kkkkkkkkkkkkk', '.k....k....k.', '.k....k....k.', 'kyk...k...kck', 'kyk..kPk..kck', '.k..kPpPk..k.', '.....kPk.....', '......k......'],
+  lampeBureau: ['....kkkk.', '...kyyyyk', '..kyyyyk.', '..kkk.k..', '...k.....', '....k....', '.....k...', '.....k...', '...kkkkk.', '...kuuuk.'],
+  disco: ['..kkkkk..', '.kwcwcwk.', 'kcwcwcwck', 'kwcwcwcwk', 'kcwcwcwck', '.kwcwcwk.', '..kkkkk..'],
+  biblio: ['kkkkkkkkkkkk', 'kOOOOOOOOOOk', 'kOPCyuPgcuOk', 'kOPCyuPgcuOk', 'kOPCyuPgcCOk', 'kOOOOOOOOOOk', 'kOuyPcgPuyOk', 'kOcyPcgPuyOk', 'kOcyPcgPCyOk', 'kOOOOOOOOOOk', 'kOgPuyCcPuOk', 'kOgPcyCcPuOk', 'kOgPcyCcPpOk', 'kOOOOOOOOOOk', 'kOOOOOOOOOOk', 'kkkkkkkkkkkk'],
+  calendrier: ['kkkkkkkkk', 'kPPPPPPPk', 'kkkkkkkkk', 'kwwwwwwwk', 'kwkwkwkwk', 'kwwwwwwwk', 'kwkwPwkwk', 'kwwwwwwwk', 'kkkkkkkkk'],
+  radio: ['..k.......k..', '.kkkkkkkkkkk.', 'kuuuuuuuuuuuk', 'kuKKKuCuKKKuk', 'kuKwKuCuKwKuk', 'kuKKKuuuKKKuk', 'kuuPuPuPuuuuk', 'kkkkkkkkkkkkk'],
+  fauteuil: ['..kkkkkkk..', '.kPPPPPPPk.', '.kPpppppPk.', 'kkPpppppPkk', 'kPkPPPPPkPk', 'kPkpppppkPk', 'kPPPPPPPPPk', 'kkkkkkkkkkk', '.k.......k.'],
+  neonTasse: ['..P..P...', '.P..P....', '..P..P...', 'CCCCCCC..', 'C.....CCC', 'C.....C.C', 'C.....CCC', '.C...C...', '..CCC....'],
+});
 SPR.nuageOrage =SPR.nuage.map(r => r.replace(/w/g, 'u').replace(/l/g, 'K'));
 const pxCache = {};
 function pix(name, k = 3, swap = '') { // swap = 'ab' : la couleur a devient b (ex. fanions, chaussettes)
@@ -674,44 +696,195 @@ const SEASONS = {
 };
 const SEASON_KEYS = Object.keys(SEASONS);
 
+// ---------- Objets et vues animés (canvas.pxa, redessinés 8 fois par seconde) ----------
+// Chaque animation dessine une image complète à partir du numéro d'image f, de la nuit (n) et de l'état du jeu.
+// pxa() pose le canvas (taille en em comme pix(), k = taille d'un pixel), PXA.sync() lance la boucle après un rendu ;
+// elle s'arrête seule quand plus aucun canvas.pxa n'est affiché. Avec « réduire les animations », une seule image fixe.
+let partyUntil = 0, checkedAt = 0; // fête après une session complète (boule disco), moment où « Je suis là » a été coché (calendrier)
+const studying = () => T.running && T.phase === 'work', onBreak = () => T.running && T.phase !== 'work';
+const NOTE = ['.PPP', '.P.P', '.P..', 'PP..', 'PP..'];
+function pxCtx(cv) { // petites fonctions de dessin au pixel sur un canvas
+  const c = cv.getContext('2d'), p = (x, y, col) => { if (col) { c.fillStyle = col; c.fillRect(Math.floor(x), Math.floor(y), 1, 1); } };
+  return {
+    p, clear: () => c.clearRect(0, 0, cv.width, cv.height),
+    rect: (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(Math.floor(x), Math.floor(y), w, h); },
+    spr: (name, x, y, map = {}) => SPR[name].forEach((r, j) => [...r].forEach((ch, i) => ch !== '.' && p(x + i, y + j, map[ch] || PXC[ch]))),
+    halo: (cx, cy, r, col) => { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { const d = Math.hypot(x - cx, y - cy); if (d <= r * .5 || (d <= r && (x + y) % 2 === 0)) p(x, y, col); } },
+    ell: (cx, cy, r, col) => { for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) if ((x + .5 - cx) ** 2 + (y + .5 - cy) ** 2 <= r * r) p(x, y, col); },
+    line: (x0, y0, x1, y1, col) => { const k = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) || 1; for (let i = 0; i <= k; i++) p(Math.round(x0 + (x1 - x0) * i / k), Math.round(y0 + (y1 - y0) * i / k), col); },
+  };
+}
+const cellsOf = (name, letters) => SPR[name].flatMap((r, y) => [...r].map((ch, x) => letters.includes(ch) ? [x, y] : null).filter(Boolean));
+const note = (g, x, f, k) => { // note de musique qui monte en ondulant et pâlit en haut
+  const t = (f + k * 6) % 12;
+  NOTE.forEach((r, j) => [...r].forEach((ch, i) => ch !== '.' && g.p(x + i + Math.round(Math.sin((f + k * 3) * .5)), j - (t >> 1) + 2, t < 8 ? '#FF4FD8' : '#F4B5E8')));
+};
+const PXANIM = {
+  tourneDisque: { w: 18, h: 18, draw(g, f) { // pendant le travail : le disque tourne, des notes s'envolent
+    g.spr('tourneDisque', 2, 9);
+    if (!studying()) return;
+    const a = f * .7; g.p(2 + 6.5 + Math.cos(a) * 3.5, 9 + 2.6 + Math.sin(a) * 1.2, '#FFF7FE');
+    note(g, 0, f, 0); note(g, 13, f, 1);
+  } },
+  lampeLave: { w: 6, h: 13, draw(g, f) { // bulles qui montent et redescendent
+    g.spr('lampeLave', 0, 0); cellsOf('lampeLave', 'Pp').forEach(([x, y]) => g.p(x, y, '#FF4FD8'));
+    [[0, 1], [5, 2], [9, 1]].forEach(([k, x]) => { const t = (f + k) % 12, y = 2 + (t < 6 ? 6 - t : t - 6); g.rect(x, y, 2, 1, '#FFB8EE'); });
+  } },
+  borne: { w: 10, h: 16, draw(g, f) { // pendant la pause : une balle rebondit entre deux raquettes ; le bouton clignote
+    g.spr('arcade', 0, 0);
+    if (onBreak()) {
+      g.rect(3, 4, 4, 3, '#150B31');
+      const bx = [0, 1, 2, 3, 2, 1][f % 6], by = [0, 1, 2, 1][f % 4];
+      g.p(3 + bx, 4 + by, '#FFD99A'); g.p(3, 4 + Math.min(2, by), '#4FE3FF'); g.p(6, 4 + Math.max(0, by - 1), '#FF4FD8');
+    }
+    g.p(2, 9, f % 4 < 2 ? '#FF4FD8' : '#FFB8EE');
+  } },
+  ordi: { w: 12, h: 12, draw(g, f) { // pendant le travail : du code vert défile ; le curseur clignote toujours
+    g.spr('ordi', 0, 0); g.rect(3, 2, 6, 4, '#150B31');
+    if (studying()) for (let r = 0; r < 4; r++) { const l = (r + f) % 7, len = 1 + (l * 5) % 5; for (let i = 0; i < 6; i++) if (i < len && (l + i) % 3) g.p(3 + i, 2 + r, '#4FE3B0'); }
+    if (f % 4 < 2) g.p(studying() ? 8 : 3, 5, '#4FE3B0');
+  } },
+  disco: { w: 33, h: 20, draw(g, f) { // scintille ; après une session complète, des taches de lumière tournent autour
+    g.spr('disco', 12, 0); cellsOf('disco', 'wc').forEach(([x, y]) => g.p(12 + x, y, (x + y + (f >> 2)) % 2 ? '#FFF7FE' : '#8FF0FF'));
+    if (Date.now() < partyUntil) ['#FF4FD8', '#4FE3FF', '#FFD99A', '#4FE3B0'].forEach((c, k) => { const a = f * .35 + k * Math.PI / 2; g.rect(Math.round(15 + Math.cos(a) * 14), Math.round(9 + Math.sin(a) * 8), 2, 2, c); });
+  } },
+  planetes: { w: 17, h: 10, draw(g, f) { // chaque planète se balance à son rythme
+    g.rect(2, 0, 13, 1, LINE);
+    [[3, 5, '#FFD99A'], [8, 7, '#FF4FD8'], [13, 4, '#4FE3FF']].forEach(([x, len, c], k) => {
+      const dx = Math.round(Math.sin(f * .3 + k * 2) * 1.4);
+      g.line(x, 1, x + dx, len, LINE); g.ell(x + dx + .5, len + 1.5, 1.5, c);
+    });
+  } },
+  monstera: { w: 15, h: 15, draw(g, f) { // les feuilles ondulent quand le vent souffle (son Vent ou vue Forêt)
+    const wind = S.vol.wind > 0 || S.view === 'foret';
+    SPR.monstera.forEach((r, y) => { const dx = wind && y < 9 ? Math.round(Math.sin(f * .45 - y * .5) * (9 - y) / 6) : 0; [...r].forEach((ch, x) => ch !== '.' && g.p(1 + x + dx, y, PXC[ch])); });
+  } },
+  neonLune: { w: 8, h: 8, draw(g, f, n) { // la nuit, le tube vacille de temps en temps
+    const on = !n || [1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1][f % 30];
+    g.spr('neonLune', 0, 0, { P: !n ? '#FF8FE6' : on ? '#FF4FD8' : '#7A2380' });
+  } },
+  telescope: { w: 16, h: 18, draw(g, f, n) { // la nuit : une étoile scintille au bout, une étoile filante passe
+    g.spr('telescope', 0, 5);
+    if (!n) return;
+    g.p(14, 2, '#FFD99A'); if (f % 6 < 3) [[13, 2], [15, 2], [14, 1], [14, 3]].forEach(([x, y]) => g.p(x, y, '#FFD99A'));
+    const t = f % 30; if (t < 6) for (let i = 0; i < 3; i++) g.p(15 - t * 2 + i, t + (i >> 1), i ? '#BFF6FF' : '#FFF7FE');
+  } },
+  radio: { w: 17, h: 15, draw(g, f) { // quand un son d'ambiance joue : les haut-parleurs battent, des notes sortent
+    g.spr('radio', 2, 7);
+    if (!Object.values(S.vol).some(v => v > 0)) return;
+    const beat = f % 4 < 2; [[3, 3], [9, 3]].forEach(([x, y]) => { g.rect(2 + x, 7 + y, 3, 2, beat ? '#FF4FD8' : '#150B31'); g.p(3 + x, 7 + y + (beat ? 0 : 1), '#FFF7FE'); });
+    note(g, 0, f, 0); note(g, 13, f, 2);
+  } },
+  calendrier: { w: 13, h: 13, draw(g, f) { // le jour se coche quand tu as cliqué « Je suis là », avec un éclat juste après
+    g.spr('calendrier', 2, 2);
+    if (S.streak.last !== today()) return;
+    [[6, 8], [5, 7], [7, 7]].forEach(([x, y]) => g.p(x, y, '#4FE3B0'));
+    if (Date.now() - checkedAt < 2500 && f % 4 < 2) [[0, -3], [3, 0], [-3, 0], [0, 3]].forEach(([dx, dy]) => g.p(6 + dx, 8 + dy, '#FFD99A'));
+  } },
+  globe: { w: 9, h: 12, draw(g, f) { // les continents défilent lentement
+    g.spr('globe', 0, 0); const land = 'ccgggcccggccccgggggcccgc';
+    cellsOf('globe', 'cg').forEach(([x, y]) => g.p(x, y, land[(x + y * 3 + (f >> 1)) % land.length] === 'g' ? '#4FE3B0' : '#8FF0FF'));
+  } },
+  bonsai: { w: 11, h: 10, draw(g) { // une feuille de plus par heure de révision (8 au plus)
+    g.spr('bonsai', 0, 0);
+    [[1, 0], [8, 0], [4, 0], [0, 2], [10, 2], [6, -1], [2, -1], [9, 1]].slice(0, Math.min(8, Math.floor(S.totalMin / 60))).forEach(([x, y]) => g.p(x, 1 + y, '#4FE3B0'));
+  } },
+  lampeBureau: { w: 13, h: 13, draw(g, f, n) { // allumée quand le minuteur tourne
+    const on = T.running;
+    if (on) g.halo(6, 5, 6, n ? '#7A2380' : '#FFD99A');
+    g.spr('lampeBureau', 2, 3, on ? {} : { y: '#C9A6E4' });
+    if (on) for (let i = 0; i < 3; i++) g.p(4 + i, 7 + i, '#FFD99A');
+  } },
+  // vues : mer = la scène entière ; lucioles et espace = calques transparents par-dessus l'image fixe
+  mer: { w: 96, h: 48, fill: true, draw(g, f, n) {
+    for (let y = 0; y < 48; y++) g.rect(0, y, 96, 1, (n ? ['#241050', '#201246', '#110927'] : ['#BFF6FF', '#8FF0FF', '#4FE3FF'])[y < 16 ? 0 : y < 32 ? 1 : 2]);
+    for (let x = 2; x < 96; x += 5) for (let k = 0; k < 4 + x % 3; k++) g.p(x + Math.round(Math.sin(f * .4 + k * .6 + x) * .7), 47 - k, n ? '#22A783' : '#4FE3B0');
+    [[0, 14, '#FF8FE6', 1], [40, 30, '#FFC46B', -1], [70, 22, '#FF4F6D', 1]].forEach(([o, y, c, d]) => {
+      const x = d > 0 ? (f + o) % 106 - 6 : 100 - (f + o) % 106;
+      g.rect(x, y, 4, 2, c); g.p(d > 0 ? x + 4 : x - 1, y - 1, c); g.p(d > 0 ? x + 4 : x - 1, y + 2, c); g.p(d > 0 ? x + 1 : x + 2, y, LINE);
+    });
+    [[8, 0], [30, 17], [52, 5], [77, 30]].forEach(([x, o]) => { const y = 46 - (f + o) % 46; g.p(x + (y % 4 < 2 ? 0 : 1), y, n ? '#4FE3FF' : '#FFF7FE'); });
+  } },
+  lucioles: { w: 96, h: 48, fill: true, draw(g, f, n) {
+    if (n) [[10, 30, 0], [24, 38, 3], [37, 26, 5], [52, 34, 1], [66, 28, 6], [79, 40, 2], [88, 31, 4]].forEach(([x, y, o]) => { const t = (f + o * 3) % 14; if (t < 8) g.p(x + Math.round(Math.sin((f + o) * .3)), y - (t >> 2), t < 6 ? '#FFD99A' : '#FFC46B'); });
+  } },
+  espace: { w: 96, h: 48, fill: true, draw(g, f) {
+    [[12, 8], [30, 40], [48, 6], [84, 12], [90, 40], [8, 30]].forEach(([x, y], i) => { if ((i + (f >> 2)) % 3) g.p(x, y, '#FFF7FE'); });
+    const x = f % 120 - 10; g.rect(x, 8, 2, 2, '#D9BDEE'); g.p(x - 1, 9, '#4FE3FF'); g.p(x + 2, 9, '#4FE3FF'); if (f % 4 < 2) g.p(x, 7, '#FF4FD8');
+  } },
+};
+const pxa = (id, k = 3) => { const a = PXANIM[id]; return `<canvas class="pxa${a.fill ? ' fill' : ''}" data-anim="${id}" width="${a.w}" height="${a.h}" aria-hidden="true"${a.fill ? '' : ` style="width:${a.w * k / 16}em;height:${a.h * k / 16}em"`}></canvas>`; };
+const spa = (id, style, k = 3, cls = '') => `<span class="sd ${cls}" style="${style}">${pxa(id, k)}</span>`;
+const PXA = { // une seule boucle pour tous les objets animés
+  timer: null, f: 0, still: matchMedia('(prefers-reduced-motion: reduce)').matches,
+  draw() {
+    const list = document.querySelectorAll('canvas.pxa');
+    list.forEach(cv => { const g = pxCtx(cv); g.clear(); PXANIM[cv.dataset.anim].draw(g, this.still ? 0 : this.f, S.night); });
+    return list.length;
+  },
+  sync() {
+    if (!this.draw() || this.still || this.timer) return;
+    const loop = () => { this.f++; this.timer = this.draw() ? setTimeout(loop, 125) : null; };
+    this.timer = setTimeout(loop, 125);
+  },
+};
 // ---------- Décoration de la pièce ----------
 // season : l'objet ne s'affiche que pendant cette saison (catégorie Saisons de la boutique)
 const DECOR = {
   etagere:     { name: 'Étagère', icon: 'livres', price: 0, html: `<div class="d shelf">${pix('livres', 2)}${lit(pix('bougie', 2))}${pix('cactus', 2)}</div>` },
-  plante:      { name: 'Grande plante', icon: 'plante', price: 0, html: sp('plante', 'right:18.5%;bottom:30px') },
+  plante:      { spot: 'solD', name: 'Grande plante', icon: 'plante', price: 0, html: sp('plante', 'right:18.5%;bottom:30px') },
   tapisLav:    { name: 'Tapis lavande', price: 0, rug: '#E7CFF5' },
   tapisRose:   { name: 'Tapis rose', price: 100, rug: '#FFB8EE' },
   tapisMenthe: { name: 'Tapis menthe', price: 100, rug: '#B8F5E0' },
   tapisSoleil: { name: 'Tapis soleil', price: 100, rug: '#FFD99A' },
-  suspendue:   { name: 'Plante suspendue', icon: 'suspendue', price: 120, html: `<span class="d hang">${pix('suspendue')}</span>` },
-  cadre:       { name: 'Cadre', icon: 'cadre', price: 140, html: sp('cadre', 'right:6%;top:30%') },
-  nounours:    { name: 'Nounours', icon: 'nounours', price: 150, html: sp('nounours', 'left:24%;bottom:22px') },
+  suspendue:   { spot: 'plafond', name: 'Plante suspendue', icon: 'suspendue', price: 120, html: `<span class="d hang">${pix('suspendue')}</span>` },
+  cadre:       { spot: 'murD', name: 'Cadre', icon: 'cadre', price: 140, html: sp('cadre', 'right:6%;top:30%') },
+  nounours:    { spot: 'solG', name: 'Nounours', icon: 'nounours', price: 150, html: sp('nounours', 'left:24%;bottom:22px') },
   horloge:     { name: 'Horloge', icon: 'horloge', price: 180, html: sp('horloge', 'left:8%;top:29%') },
   guirlande:   { name: 'Guirlande lumineuse', icon: 'ampoule', price: 220, html: `<div class="d garland">${Array.from({ length: 10 }, (_, i) => pix('perle', 2, i % 2 ? 'Po' : '')).join('')}</div>` },
   aquarium:    { name: 'Bocal à poisson', icon: 'bocal', price: 260, html: `<div class="d ledge">${lit(pix('bocal'), 'fish')}</div>` }, // sur une tablette au mur : au sol, il cachait Perle ; sur le rebord, la bulle
   rideaux:     { name: 'Rideaux roses', icon: 'rideau', price: 300, html: '<div class="d curtain l"></div><div class="d curtain r"></div>' },
-  poster:      { name: 'Poster lune', icon: 'lune', price: 130, html: `<span class="d poster">${pix('lune')}</span>` },
+  poster:      { spot: 'murG', name: 'Poster lune', icon: 'lune', price: 130, html: `<span class="d poster">${pix('lune')}</span>` },
   lampe:       { name: 'Lanterne', icon: 'lanterne', price: 160, html: `<span class="d hang" style="right:auto;left:16%">${lit(pix('lanterne'), 'lantern')}</span>` },
+  // spot = emplacement : un seul objet par emplacement est affiché (voir sameSpot), comme pour les tapis
+  tourneDisque:{ spot: 'bureau', name: 'Tourne-disque', icon: 'tourneDisque', price: 180, html: `<div class="d ledge desk">${pxa('tourneDisque')}</div>` },
+  ordi:        { spot: 'bureau', name: 'Ordinateur rétro', icon: 'ordi', price: 220, html: `<div class="d ledge desk">${pxa('ordi')}</div>` },
+  lampeBureau: { spot: 'bureau', name: 'Lampe de bureau', icon: 'lampeBureau', price: 130, html: `<div class="d ledge desk">${pxa('lampeBureau')}</div>` },
+  globe:       { spot: 'bureau', name: 'Globe', icon: 'globe', price: 120, html: `<div class="d ledge desk">${pxa('globe')}</div>` },
+  lampeLave:   { spot: 'rebord', name: 'Lampe à lave', icon: 'lampeLave', price: 160, html: spa('lampeLave', sillL(), 3, 'lit lantern') },
+  bonsai:      { spot: 'rebord', name: 'Bonsaï', icon: 'bonsai', price: 120, html: spa('bonsai', sillL()) },
+  radio:       { spot: 'rebord', name: 'Radio cassette', icon: 'radio', price: 140, html: spa('radio', sillL()) },
+  fauteuil:    { spot: 'solG', name: 'Fauteuil', icon: 'fauteuil', price: 170, html: sp('fauteuil', 'left:23%;bottom:20px') },
+  pouf:        { spot: 'solG', name: 'Pouf', icon: 'pouf', price: 90, html: sp('pouf', 'left:25%;bottom:18px') },
+  monstera:    { spot: 'solD', name: 'Monstera', icon: 'monstera', price: 150, html: spa('monstera', 'right:18%;bottom:26px') },
+  telescope:   { spot: 'solD', name: 'Télescope', icon: 'telescope', price: 220, html: spa('telescope', 'right:18%;bottom:24px') },
+  borne:       { spot: 'solD', name: "Borne d'arcade", icon: 'arcade', price: 300, html: spa('borne', 'right:18%;bottom:22px', 3, 'lit fish') },
+  biblio:      { spot: 'murG', name: 'Bibliothèque', icon: 'biblio', price: 240, html: sp('biblio', 'left:5%;top:9%') },
+  liege:       { spot: 'murD', name: 'Tableau de liège', icon: 'liege', price: 110, html: sp('liege', 'right:5%;top:30%') },
+  calendrier:  { spot: 'murD', name: 'Calendrier', icon: 'calendrier', price: 70, html: spa('calendrier', 'right:7%;top:29%') },
+  neonLune:    { spot: 'enseigne', name: 'Néon lune', icon: 'neonLune', price: 200, html: spa('neonLune', 'right:calc(var(--winL) + 1em);top:8%', 4, 'lit lantern') },
+  planetes:    { spot: 'plafond', name: 'Mobile planètes', icon: 'planetes', price: 160, html: `<span class="d hang">${pxa('planetes')}</span>` }, // à la place de la plante suspendue, loin du minuteur
+  disco:       { spot: 'plafond', name: 'Boule disco', icon: 'disco', price: 180, html: `<span class="d hang">${pxa('disco')}</span>` },
   fleursGuir:  { season: 'printemps', name: 'Guirlande de fleurs', icon: 'fleur', price: 90, html: bunting('', [0, 1, 0, 2, 0, 1, 0, 2].map(i => [pix('fleur'), pix('fleur', 3, 'pw'), pix('tulipeMini')][i])) },
   tulipes:     { season: 'printemps', name: 'Grande tulipe', icon: 'tulipe', price: 80, html: sp('tulipe', 'left:2%;bottom:20px') + sp('pousse', 'left:10%;bottom:10px') },
   poussin:     { season: 'printemps', name: 'Poussin et panier', icon: 'poussin', price: 70, html: sp('poussin', 'right:3%;bottom:20px') + sp('panier', 'right:12%;bottom:12px', 2) },
-  the:         { season: 'printemps', name: 'Thé et fraise', icon: 'theiere', price: 60, html: sp('theiere', sillL()) + sp('fraise', sillR()) },
+  the:         { spot: 'rebord', season: 'printemps', name: 'Thé et fraise', icon: 'theiere', price: 60, html: sp('theiere', sillL()) + sp('fraise', sillR()) },
   papillon:    { season: 'printemps', name: 'Papillon', icon: 'papillon', price: 50, html: sp('papillon', 'left:30%;top:13%', 3, 'flutter') },
   fanions:     { season: 'ete', name: 'Fanions', icon: 'fanion', price: 90, html: bunting('', Array.from({ length: 10 }, (_, i) => pix('fanion', 2, 'P' + 'PCog'[i % 4]))) },
   palmier:     { season: 'ete', name: 'Palmier', icon: 'palmier', price: 120, html: sp('palmier', 'left:1%;bottom:12px') + sp('ballon', 'left:15%;bottom:8px') },
   bouee:       { season: 'ete', name: 'Bouée', icon: 'bouee', price: 60, html: sp('bouee', 'right:6%;top:46%') },
   plage:       { season: 'ete', name: 'Coquillage et tongs', icon: 'coquillage', price: 50, html: sp('coquillage', 'right:3%;bottom:16px') + sp('tong', 'right:12%;bottom:10px', 2) },
-  cocktail:    { season: 'ete', name: 'Cocktail et pastèque', icon: 'cocktail', price: 60, html: sp('cocktail', sillL()) + sp('pasteque', sillR()) },
+  cocktail:    { spot: 'rebord', season: 'ete', name: 'Cocktail et pastèque', icon: 'cocktail', price: 60, html: sp('cocktail', sillL()) + sp('pasteque', sillR()) },
   feuillesGuir:{ season: 'automne', name: 'Guirlande de feuilles', icon: 'erable', price: 90, html: bunting('', Array.from({ length: 8 }, (_, i) => i % 2 ? pix('feuille') : pix('erable'))) },
   citrouilles: { season: 'automne', name: 'Citrouilles', icon: 'citrouille', price: 100, html: sp('citrouille', 'left:1%;bottom:12px', 4) + sp('citrouille', 'left:12.5%;bottom:8px') + sp('champignon', 'left:20%;bottom:10px', 2) },
   herisson:    { season: 'automne', name: 'Hérisson', icon: 'herisson', price: 80, html: sp('herisson', 'right:2%;bottom:16px') + sp('pomme', 'right:12.5%;bottom:10px') },
-  gouter:      { season: 'automne', name: 'Goûter d\'automne', icon: 'tarte', price: 70, html: sp('tasse', sillL(), 3, 'cup') + sp('tarte', sillR()) + sp('bougie', sillR(1), 2, 'lit') },
+  gouter:      { spot: 'rebord', season: 'automne', name: 'Goûter d\'automne', icon: 'tarte', price: 70, html: sp('tasse', sillL(), 3, 'cup') + sp('tarte', sillR()) + sp('bougie', sillR(1), 2, 'lit') },
   noelGuir:    { season: 'hiver', name: 'Guirlande de Noël', icon: 'ampoule', price: 110, html: bunting('lights', LIGHTS.concat(LIGHTS, LIGHTS).map(c => `<b style="--c:${c}"></b>`)) },
   sapin:       { season: 'hiver', name: 'Sapin et cadeaux', icon: 'sapin', price: 150, html: sp('sapin', 'left:1%;bottom:14px', 4) + sp('cadeau', 'left:16%;bottom:8px') + sp('cadeau2', 'left:4%;bottom:2px') },
   pereNoel:    { season: 'hiver', name: 'Père Noël', icon: 'pereNoel', price: 130, html: sp('pereNoel', 'right:2%;bottom:20px') },
   bonhomme:    { season: 'hiver', name: 'Bonhomme de neige', icon: 'bonhomme', price: 70, html: sp('bonhomme', 'right:13%;bottom:10px', 2) },
   chaussettes: { season: 'hiver', name: 'Chaussettes et cloche', icon: 'chaussette', price: 60, html: sp('chaussette', 'right:20.5%;top:5%', 2) + sp('chaussette', 'right:17.5%;top:6%', 2, '', 'Rc') + sp('cloche', 'right:7%;top:46%') },
-  chocolat:    { season: 'hiver', name: 'Chocolat chaud', icon: 'tasse', price: 80, html: sp('tasse', sillL(), 3, 'cup') + sp('cookie', sillL(1)) + sp('bougie', sillR(), 2, 'lit') },
+  chocolat:    { spot: 'rebord', season: 'hiver', name: 'Chocolat chaud', icon: 'tasse', price: 80, html: sp('tasse', sillL(), 3, 'cup') + sp('cookie', sillL(1)) + sp('bougie', sillR(), 2, 'lit') },
 };
 
 // ---------- Boutique : ambiances et thèmes ----------
@@ -781,7 +954,7 @@ function checkIn() {
     S.freezes -= missed; st.cur++;
     if (missed) toast(`🧊 Gel de série utilisé (${missed}) : ta série continue !`);
   } else st.cur = 1;
-  st.last = today(); st.best = Math.max(st.best, st.cur);
+  st.last = today(); st.best = Math.max(st.best, st.cur); checkedAt = Date.now();
   const r = STREAK_REWARDS[st.cur];
   if (r) { grant(r, `Série de ${st.cur} jours`); toast(`🔥 ${st.cur} jours de série ! 🎁 ${rewardText(r)}`); }
   else toast(`🔥 Journée validée : ${st.cur} j de série`);
@@ -805,7 +978,15 @@ const ROOMS = {
   zen: { name: 'Chambre zen', price: 350, desc: 'Cloisons de papier et nattes' },
   neon: { name: 'Studio néon', price: 400, desc: 'Carrelage, cœur lumineux et fenêtre en néon' },
   grenier: { name: 'Grenier étoilé', price: 450, desc: 'Plafond en pente et plinthe néon la nuit' },
+  bibliotheque: { name: 'Bibliothèque', price: 400, desc: 'Des étagères de livres du sol au plafond' },
+  cafe: { name: 'Café lofi', price: 450, desc: 'Briques roses, damier et tasse en néon' },
+  cabane: { name: 'Cabane dans les arbres', price: 450, desc: 'Des murs en rondins' },
+  observatoire: { name: 'Observatoire', price: 500, desc: 'Une carte du ciel peinte au mur' },
+  sousmarin: { name: 'Sous-marin', price: 550, desc: 'Métal riveté et fenêtre en laiton' },
+  arcade: { name: "Salle d'arcade", price: 550, desc: 'Rayures néon et moquette à confettis' },
+  station: { name: 'Station spatiale', price: 600, desc: 'Panneaux blancs et bandes de lumière' },
 };
+const sameSpot = (a, b) => a !== b && !!(DECOR[a].rug && DECOR[b].rug || DECOR[a].spot && DECOR[a].spot === DECOR[b].spot); // deux objets qui iraient au même endroit
 // Pixel art des chambres : chaque tuile est dessinée au chargement (t(x, y) = couleur d'un pixel) puis répétée en CSS.
 // Un pixel vaut PX_EM, comme les dessins de la déco (k = 3), donc tout grandit avec la pièce.
 const PX_EM = 3 / 16;
@@ -846,6 +1027,56 @@ const ROOM_PX = { // n = nuit : couleurs de nuit explicites, jamais de filtre
       background: ${pxURL(7, 6, (x, y) => HEART[y][x] === 'P' ? (n ? '#FF4FD8' : '#FF8FE6') : '')} 0 0 / 100% 100%; ${n ? 'filter: drop-shadow(0 0 .25em #FF4FD8) drop-shadow(0 0 .6em #FF4FD8);' : ''} }
       ${sel} .window { box-shadow: 0 0 0 6px ${n ? '#FF4FD8, 0 0 20px #FF4FD8' : '#FF8FE6'}; }`, /* 6 px : le néon dépasse du contour de 3 px */
   }),
+  bibliotheque: n => ({ // étagères de livres du sol au plafond
+    wall: pxTile(48, 24, (x, y) => {
+      const row = y / 12 | 0, yy = y % 12, col = x / 3 | 0, back = n ? '#150B31' : '#FFC46B';
+      const books = n ? ['#4B1A72', '#35206F', '#7A2380', '#FFC46B', '#2D1A62', '#4FE3FF'] : ['#FF8FE6', '#8FF0FF', '#FFD99A', '#4FE3B0', '#C9A6E4', '#FF4F6D', '#FFF7FE'];
+      if (yy >= 10) return n ? '#201246' : '#E8943A';
+      if ((col * 13 + row * 5) % 9 === 0 || yy < 4 - (col * 7 + row * 3) % 4) return back; // trou entre deux livres, livres de hauteurs différentes
+      const c = books[(col * 5 + row * 3) % books.length];
+      return x % 3 === 2 ? mixHex(c, '#2D1A62', .35) : c;
+    }),
+    floor: boards(6, n ? '#2D1A62' : '#FFC46B', n ? '#150B31' : '#E8943A'), plinthe: n ? '#201246' : '#E8943A',
+  }),
+  observatoire: n => ({ // carte du ciel : étoiles reliées en constellations
+    wall: pxTile(48, 40, (x, y) => {
+      const st = [[6, 6], [14, 11], [10, 19], [22, 16], [32, 8], [40, 14], [36, 26], [44, 32], [28, 33]];
+      if (st.some(([a, b]) => a === x && b === y)) return (x + y) % 2 ? '#FFD99A' : '#BFF6FF';
+      const near = ([ax, ay], [bx, by]) => { const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2))); return Math.hypot(x - ax - t * (bx - ax), y - ay - t * (by - ay)) < .5; };
+      if ([[0, 1], [1, 2], [1, 3], [4, 5], [5, 6], [6, 7], [6, 8]].some(([a, b]) => near(st[a], st[b]))) return n ? '#35206F' : '#7A2380';
+      return n ? '#110927' : '#4B1A72';
+    }),
+    floor: pxTile(12, 12, (x, y) => !x || !y ? (n ? '#35206F' : '#4B1A72') : (n ? '#201246' : '#2D1A62')), plinthe: n ? '#4FE3FF' : '#8FF0FF', glow: n && 'rgba(79, 227, 255, .55)',
+  }),
+  cafe: n => ({ // briques et carrelage en damier, tasse en néon au mur
+    wall: pxTile(16, 10, (x, y) => {
+      const off = (y / 5 | 0) % 2 ? 4 : 0;
+      if (y % 5 === 4 || (x + off) % 8 === 7) return n ? '#2D1A62' : '#FBE9FF';
+      return (((x + off) / 8 | 0) * 3 + (y / 5 | 0)) % 5 === 0 ? (n ? '#35206F' : '#FF8FE6') : (n ? '#4B1A72' : '#F4B5E8');
+    }),
+    floor: pxTile(12, 12, (x, y) => ((x / 6 | 0) + (y / 6 | 0)) % 2 ? (n ? '#201246' : '#FBE9FF') : (n ? '#35206F' : '#D9BDEE')), plinthe: n ? '#2D1A62' : '#FFF7FE',
+    extra: sel => `${sel}[data-saison=""] .wall::before { content: ""; position: absolute; right: calc(var(--winL) + 1em); top: 11%; width: ${9 * 4 / 16}em; height: ${9 * 4 / 16}em;
+      background: ${pxURL(9, 9, (x, y) => { const ch = SPR.neonTasse[y][x]; return ch === '.' ? '' : ch === 'C' ? (n ? '#4FE3FF' : '#4FE3FF') : (n ? '#FF4FD8' : '#FF8FE6'); })} 0 0 / 100% 100%; ${n ? 'filter: drop-shadow(0 0 .25em #FF4FD8) drop-shadow(0 0 .6em #4FE3FF);' : ''} }`,
+  }),
+  sousmarin: n => ({ // panneaux de métal rivetés, fenêtre cerclée de laiton
+    wall: pxTile(20, 23, (x, y) => !x || !y ? (n ? '#35206F' : '#8FF0FF') : (x === 3 || x === 17) && (y === 3 || y === 20) ? '#4FE3FF' : (n ? '#201246' : '#D9F7FF')),
+    floor: pxTile(26, 10, (x, y) => !x || !y ? (n ? '#201246' : '#8FF0FF') : (n ? '#150B31' : '#BFF6FF')), plinthe: '#4FE3FF', glow: n && 'rgba(79, 227, 255, .55)',
+    extra: sel => `${sel} .window { --frame: #FFC46B; }`,
+  }),
+  station: n => ({ // panneaux blancs et deux bandes de lumière cyan
+    wall: [10, 88].map(t => `linear-gradient(${n ? '#4FE3FF' : '#8FF0FF'} 0 0) 0 ${t}% / 100% ${2 * PX_EM}em no-repeat`).join(', ') + ', '
+      + pxTile(16, 18, (x, y) => !x || !y ? (n ? '#201246' : '#D9BDEE') : (n ? '#2D1A62' : '#E7CFF5')),
+    floor: pxTile(4, 4, (x, y) => (x + y) % 4 ? (n ? '#150B31' : '#C9A6E4') : (n ? '#35206F' : '#D9BDEE')), plinthe: n ? '#4FE3FF' : '#FFF7FE', glow: n && 'rgba(79, 227, 255, .55)',
+  }),
+  arcade: n => ({ // rayures néon et moquette à confettis
+    wall: pxTile(32, 32, (x, y) => { const d = (x + y) % 32; return d < 3 ? (n ? '#FF4FD8' : '#FF8FE6') : d >= 16 && d < 19 ? (n ? '#4FE3FF' : '#8FF0FF') : (n ? '#150B31' : '#FBE9FF'); }),
+    floor: pxTile(23, 23, (x, y) => { const h = (x * 7 + y * 13) % 23; return h === 0 ? '#FF4FD8' : h === 7 ? '#4FE3FF' : h === 14 ? '#FFD99A' : (n ? '#201246' : '#35206F'); }),
+    plinthe: n ? '#FF4FD8' : '#FF8FE6', glow: n && 'rgba(255, 79, 216, .6)',
+  }),
+  cabane: n => ({ // rondins empilés
+    wall: pxTile(8, 6, (x, y) => !y ? (n ? '#201246' : '#E8943A') : y === 1 ? (n ? '#4B1A72' : '#FFD99A') : (n ? '#35206F' : '#FFC46B')),
+    floor: boards(5, n ? '#2D1A62' : '#E8943A', n ? '#150B31' : '#FFC46B'), plinthe: n ? '#201246' : '#E8943A',
+  }),
 };
 // Les autres chambres et les saisons : tuiles de jour seulement, la nuit garde le voile violet (style.css).
 // Les saisons gardent leur sélecteur .scene[data-saison=…], plus précis que les chambres, donc leur mur l'emporte.
@@ -883,6 +1114,9 @@ function roomCSS() { // une feuille de style générée : jour, puis nuit (body.
     const r = f(n), sel = `${n ? 'body.night ' : ''}[data-chambre=${id}]`;
     css += `${sel} .wall { background: ${r.wall}; } ${sel} .floor { background: linear-gradient(${r.plinthe} 0 0) 0 0 / 100% ${2 * PX_EM}em no-repeat, ${r.floor}; box-shadow: ${r.glow ? `0 -2px 12px ${r.glow}` : 'none'}; } ${r.extra ? r.extra(sel) : ''}\n`;
   }
+  for (const [id, f] of Object.entries(VIEW_PX)) for (const n of [false, true])
+    css += `${n ? 'body.night ' : ''}.sky.v-${id} { background: ${pxURL(96, 48, f(n))} 0 0 / 100% 100%; image-rendering: pixelated; }
+`;
   document.head.insertAdjacentHTML('beforeend', `<style id="pxRooms">${css}</style>`);
 }
 const rugCache = {};
@@ -890,6 +1124,35 @@ const rugBg = c => `background: ${rugCache[c] ||= pxURL(60, 12, (x, y) => { // t
   const d = ((x + .5 - 30) / 30) ** 2 + ((y + .5 - 6) / 6) ** 2, e = ((x + .5 - 30) / 25) ** 2 + ((y + .5 - 6) / 4.2) ** 2, f = ((x + .5 - 30) / 22) ** 2 + ((y + .5 - 6) / 3.2) ** 2;
   return d > 1 ? '' : e > 1 ? mixHex(c, LINE, .35) : f > 1 ? mixHex(c, '#FFFFFF', .5) : c;
 })} center / 100% 100% no-repeat`;
+// Vues en une seule image de pixels (96 × 48, étirée à la taille de la fenêtre), dessinées par roomCSS : t(x, y) = couleur
+const hash2 = (x, y) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263); h = Math.imul(h ^ h >>> 13, 1274126177); return (h ^ h >>> 16) >>> 0; }; // pseudo-hasard sans motif visible
+const VIEW_PX = {
+  mer: n => (x, y) => {
+    if (x % 5 < 2 && y >= 47 - ((x * 5) % 7 > 3 ? 6 : 3)) return n ? '#22A783' : '#4FE3B0'; // algues
+    for (const [fx, fy, c] of [[14, 18, '#FF8FE6'], [70, 30, '#FFC46B'], [44, 10, '#FF4F6D']]) { // poissons
+      if ((y === fy || y === fy + 1) && x >= fx && x < fx + 5) return x === fx + 1 && y === fy ? '#2D1A62' : c;
+      if ((y === fy - 1 || y === fy + 2) && x === fx + 5) return c;
+    }
+    if (hash2(x, y) % 97 === 0) return n ? '#4FE3FF' : '#FFF7FE'; // bulles
+    return (n ? ['#241050', '#201246', '#110927'] : ['#BFF6FF', '#8FF0FF', '#4FE3FF'])[y < 16 ? 0 : y < 32 ? 1 : 2];
+  },
+  espace: n => (x, y) => {
+    const dx = x - 66, dy = y - 22, inPlanet = dx * dx + dy * dy <= 64;
+    if (!inPlanet && Math.abs(dy + dx * .25) < .6 && Math.abs(dx) <= 16) return '#FFC46B'; // anneau
+    if (inPlanet) return dx < -2 && dy < -2 ? '#FFB8EE' : '#FF8FE6';
+    if ((x - 22) ** 2 + (y - 36) ** 2 <= 9) return '#4FE3FF';
+    if (hash2(x, y) % 53 === 0) return ['#FFF7FE', '#BFF6FF', '#FFD99A'][(x + y) % 3];
+    return n ? '#110927' : '#241050';
+  },
+  foret: n => (x, y) => {
+    for (const [top, step, off, c] of [[22, 12, 6, n ? '#150B31' : '#22A783'], [12, 12, 0, n ? '#201246' : '#4FE3B0']]) { // sapins : rangée de devant, puis de derrière
+      const tx = ((x - off) % step + step) % step - step / 2;
+      if (y >= top && Math.abs(tx) <= (y - top) * .45) return c;
+    }
+    if (n && y > 18 && hash2(x, y) % 71 === 0) return '#FFD99A'; // lucioles
+    return n ? (y < 24 ? '#110927' : '#241050') : (y < 24 ? '#8FF0FF' : '#D9F7FF');
+  },
+};
 // Vues de la fenêtre
 const VIEWS = {
   ciel: { name: 'Ciel changeant', icon: '⛅', price: 0, desc: 'Soleil le jour, lune la nuit',
@@ -902,10 +1165,13 @@ const VIEWS = {
     html: () => `<div class="sky v-orage">${['c1', 'c2', 'c3'].map(c => `<span class="cloud ${c}">${pix('nuageOrage')}</span>`).join('')}<svg class="bolt" viewBox="0 0 20 40" aria-hidden="true"><path d="M12 0L2 22h7L5 40l13-25h-7z" fill="#FFD99A"/></svg><span class="flash"></span></div>` },
   ville: { name: 'Mini ville', icon: '🌃', price: 450, desc: 'Une ville en pixels qui vit la nuit. Clique sur un immeuble !',
     html: () => `<canvas class="ville" width="${VILLE.W}" height="${VILLE.H}" aria-hidden="true"></canvas>` },
+  mer: { name: 'Fond marin', icon: '🐠', price: 300, desc: 'Des poissons, des bulles et des algues', html: () => `<div class="sky v-mer">${pxa('mer')}</div>` },
+  foret: { name: 'Forêt', icon: '🌲', price: 300, desc: 'Des sapins, et des lucioles la nuit', html: () => `<div class="sky v-foret">${pxa('lucioles')}</div>` },
+  espace: { name: 'Espace', icon: '🪐', price: 400, desc: 'Une planète à anneau dans les étoiles', html: () => `<div class="sky v-espace">${pxa('espace')}</div>` },
 };
 function roomHTML(trying, eqMain = S.equip, eqPartner = S.partnerEquip, view = S.view, season = S.season) { // trying : objet affiché à l'essai, sans l'acheter
   let on = Object.keys(DECOR).filter(id => S.decor.on.includes(id) && (!DECOR[id].season || DECOR[id].season === season));
-  if (trying && !on.includes(trying)) on = [...on.filter(id => !(DECOR[trying].rug && DECOR[id].rug)), trying];
+  if (trying && !on.includes(trying)) on = [...on.filter(id => !sameSpot(trying, id)), trying];
   const rug = on.map(id => DECOR[id].rug).find(Boolean);
   // le tapis est posé sur le sol, sous tout le reste ; les objets posés au sol (placés avec bottom:) sont plus près de nous
   // que les compagnons, donc dessinés devant eux : un compagnon ne cache jamais le nounours ou le bocal
@@ -1251,7 +1517,7 @@ function endFocus(full) { // fin d'une session de concentration : gains, histori
   if (!full && !long) return; // trop court pour l'historique et le bilan
   S.sessions.push({ at: Date.now(), date: today(), sec: Math.round(sec), sub: +T.sub || null, goal: T.goal, full, result: null, feel: null });
   $('#goalInput').value = '';
-  happyUntil = Date.now() + 8000; say('end'); openDebrief();
+  happyUntil = Date.now() + 8000; if (full) partyUntil = Date.now() + 30000; say('end'); openDebrief();
 }
 function notify(msg) {
   if (!document.hidden || window.Notification?.permission !== 'granted') return;
@@ -1646,7 +1912,7 @@ function renderCompanions() {
   $$('.scene').forEach(s => s.classList.toggle('has-partner', S.partner));
   $('#scene').dataset.chambre = S.room; $('#scene').dataset.saison = S.season;
   $('#scene .room').innerHTML = roomHTML();
-  VILLE.sync();
+  VILLE.sync(); PXA.sync();
   const sel = selPet(), owned = S.pets.includes(sel), pvPartner = S.partner || preview === 'pingouine';
   $('#bigStage').classList.toggle('has-partner', pvPartner);
   $('#bigStage').classList.toggle('locked', !owned);
@@ -1747,7 +2013,7 @@ function renderShop() {
   const season = DECOR[tryDecor]?.season ?? (tryRoom ? '' : S.season);
   Object.assign($('#decoScene').dataset, { chambre: tryRoom || S.room, saison: season });
   $('#decoScene .room').innerHTML = roomHTML(tryDecor, withTry(S.equip, 'main'), withTry(S.partnerEquip, 'partner'), tryView || S.view, season);
-  VILLE.sync();
+  VILLE.sync(); PXA.sync();
   const td = tryDecor && DECOR[tryDecor];
   $('#decoNote').innerHTML = [td && `🏠 Essai : ${td.name} <button class="link" data-try-decor="${tryDecor}">Retirer l'essai</button>`,
     tryRoom && `🛏️ Essai : ${ROOMS[tryRoom].name} <button class="link" data-try-room="${tryRoom}">Retirer l'essai</button>`,
@@ -1943,7 +2209,9 @@ document.addEventListener('click', e => {
       if (!buy(d.price, d.name)) return;
       S.decor.owned.push(id); toast(`${d.name} acheté !`);
     } else if (S.decor.on.includes(id)) { S.decor.on = S.decor.on.filter(x => x !== id); save(); return renderAll(); }
-    if (d.rug) S.decor.on = S.decor.on.filter(x => !DECOR[x].rug); // un seul tapis à la fois
+    const gone = S.decor.on.filter(x => sameSpot(id, x)); // un seul tapis, un seul objet par emplacement
+    if (gone.length && !d.rug) toast(`🔁 ${d.name} prend la place de : ${gone.map(x => DECOR[x].name).join(', ')}`);
+    S.decor.on = S.decor.on.filter(x => !gone.includes(x));
     S.decor.on.push(id); save(); renderAll();
   }
 
@@ -2103,6 +2371,7 @@ console.assert(Object.values(DECOR).every(d => d.rug || SPR[d.icon]) && Object.v
 console.assert(JSON.stringify(parseCards('#separator:tab\n#html:true\n#tags column:3\nQ1\tR<br>1\ttag\n"a;b"\tc &amp; d\n')) === JSON.stringify([{ q: 'Q1', a: 'R\n1' }, { q: 'a;b', a: 'c & d' }])
   && JSON.stringify(parseCards('Question;Réponse\r\n"x ""y""";z\r\nseule\n')) === JSON.stringify([{ q: 'x "y"', a: 'z' }])
   && dateIn(0) === today() && dayNum(dateIn(15)) - dayNum(today()) === 15, 'import des fiches et dates');
+console.assert(Object.keys(VIEW_PX).every(k => VIEWS[k]) && Object.keys(DECOR).every(a => Object.keys(DECOR).filter(b => sameSpot(a, b)).every(b => sameSpot(b, a))), 'vues en pixels et emplacements de la déco');
 console.assert(Object.keys(ROOM_PX).every(k => ROOMS[k]) && mixHex('#000000', '#FFFFFF', .5) === '#808080' && luma('#FFFFFF') > 254, 'chambres en pixel art et couleurs');
 console.assert(shuffle([1, 2, 3, 4, 5]).sort().join() === '1,2,3,4,5' && shuffle([]).length === 0, 'shuffle garde les cartes');
 console.assert(fmtMin(59) === '59 min' && fmtMin(125) === '2 h 05', 'fmtMin');
