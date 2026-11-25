@@ -213,6 +213,12 @@ const LINE = '#2D1A62';
 const beak = '<path d="M93 114Q100 109 107 114Q100 124 93 114Z" fill="#f9c9a0" stroke="#2D1A62" stroke-width="3" stroke-linejoin="round"/>';
 const pengBelly = '<path d="M100 90C126 90 142 118 142 148C142 180 124 198 100 198C76 198 58 180 58 148C58 118 74 90 100 90Z" fill="#fffdf8"/>';
 const tummy = fill => `<ellipse cx="100" cy="166" rx="36" ry="36" fill="${fill}"/>`;
+// Détail posé case par case sur la grille des 32 × 35 pixels (une lettre = une case de pal, '.' = vide), pour ce qui est trop fin
+// pour le dessin vectoriel. Yeux : colonnes 12-13 et 18-19, lignes 15-16 ; joues : ligne 19, colonnes 10-11 et 20-21 ; le milieu passe entre 15 et 16.
+// 200 / 32 et 220 / 35 en dur : PET_N et PET_M sont déclarés plus bas.
+const cells = (c0, r0, rows, pal) => `<g stroke="none">${rows.map((s, j) => [...s].map((ch, i) => pal[ch] ?
+  `<rect x="${(c0 + i) * 6.25}" y="${((r0 + j) * 220 / 35).toFixed(3)}" width="6.25" height="6.286" fill="${pal[ch]}"/>` : '').join('')).join('')}</g>`;
+const smile = (r = 18) => cells(14, r, ['x..x', '.xx.'], { x: LINE });
 const SPECIES = {
   pingouin: { name: 'Pingouin', dflt: 'Plume', price: 0, rarity: 'commun',
     story: ["Plume vient d'une banquise où il faisait trop froid pour lire dehors.", "Il a traversé l'océan sur un glaçon, un livre de poésie sous l'aile.", 'Depuis, il rêve d\'ouvrir une bibliothèque pour tous les animaux du jardin.'], body: '#a9b4d4', feet: '#f9c9a0', belly: pengBelly, face: beak },
@@ -233,7 +239,7 @@ const SPECIES = {
     back: '<path d="M140 198Q198 198 188 138Q178 108 160 138Q160 178 140 188Z" fill="#f7c19c"/><path d="M188 138Q178 108 165 128Q174 138 188 138Z" fill="#fff6ec" stroke-width="2.5"/>',
     ears: '<path d="M52 96L52 34L96 64ZM148 96L148 34L104 64Z" fill="#f7c19c"/><path d="M52 54L52 34L69 46ZM148 54L148 34L131 46Z" fill="#8a6a7e" stroke-width="2.5"/>',
     belly: tummy('#fff6ec'),
-    face: '<path d="M62 110Q100 152 138 110Q100 128 62 110Z" fill="#fff6ec" stroke="#2D1A62" stroke-width="2.5" stroke-linejoin="round"/><ellipse cx="100" cy="115" rx="5" ry="3.5" fill="#2D1A62"/>' },
+    face: cells(13, 17, ['.wxxw.', 'wwwwww', '.wwww.'], { w: '#fff6ec', x: LINE }) },
   hamster: { name: 'Hamster', dflt: 'Noisette', rarity: 'rare', body: '#f3c58f', feet: '#f9c9a0',
     story: ['Noisette range ses graines par ordre alphabétique dans ses joues.', "Elle a déjà couru l'équivalent de trois tours du monde dans sa roue.", 'Son secret, dit-elle : un petit tour de roue chaque jour.'],
     ears: '<circle cx="62" cy="70" r="16" fill="#f3c58f"/><circle cx="138" cy="70" r="16" fill="#f3c58f"/><circle cx="62" cy="70" r="8" fill="#f9cdd9" stroke-width="2"/><circle cx="138" cy="70" r="8" fill="#f9cdd9" stroke-width="2"/>',
@@ -257,9 +263,10 @@ const SPECIES = {
   axolotl: { name: 'Axolotl', dflt: 'Corail', rarity: 'epique', body: '#f7bfd6', feet: '#f7bfd6',
     story: ["Corail vient d'un lac caché où l'eau brille comme du verre.", 'Elle peut faire repousser ses nageoires, mais elle préfère faire pousser des idées.', 'Elle sourit tout le temps, même quand les exercices sont difficiles.'],
     back: '<path d="M140 192Q186 202 192 168Q172 178 150 174Z" fill="#f7bfd6"/>',
-    ears: '<g fill="#f08fb4"><ellipse cx="44" cy="84" rx="16" ry="6" transform="rotate(-30 44 84)"/><ellipse cx="40" cy="102" rx="16" ry="6"/><ellipse cx="44" cy="120" rx="16" ry="6" transform="rotate(30 44 120)"/><ellipse cx="156" cy="84" rx="16" ry="6" transform="rotate(30 156 84)"/><ellipse cx="160" cy="102" rx="16" ry="6"/><ellipse cx="156" cy="120" rx="16" ry="6" transform="rotate(-30 156 120)"/></g>',
+    // trois branches fines de chaque côté, bien séparées
+    ears: '<path d="M60 80L28 52M52 102L14 98M60 124L28 150M140 80L172 52M148 102L186 98M140 124L172 150" fill="none" stroke="#f08fb4" stroke-width="8" stroke-linecap="square"/>',
     belly: tummy('#fde3ee'),
-    face: '<path d="M88 118Q100 127 112 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
+    face: smile() },
   koala: { name: 'Koala', dflt: 'Eucalyptus', rarity: 'epique', body: '#b9bfcc', feet: '#a3a9b8',
     story: ['Eucalyptus dort vingt heures par jour, mais les quatre autres sont très productives.', "Il a lu tous les livres de la bibliothèque de son arbre, deux fois.", 'Il dit que se reposer fait partie du travail, et il a bien raison.'],
     ears: '<circle cx="54" cy="76" r="24" fill="#b9bfcc"/><circle cx="146" cy="76" r="24" fill="#b9bfcc"/><circle cx="54" cy="78" r="13" fill="#f3e6ef" stroke-width="2"/><circle cx="146" cy="78" r="13" fill="#f3e6ef" stroke-width="2"/>',
@@ -274,43 +281,45 @@ const SPECIES = {
     story: ["Braise est née d'un œuf tombé d'une étoile filante.", 'Ses flammes sont tièdes et sentent la cannelle, parfaites pour réchauffer le thé.', 'On raconte qu\'elle ne choisit que les élèves au cœur patient.'],
     back: '<path d="M52 110Q8 80 14 130Q30 120 44 138Z" fill="#d9ccf5"/><path d="M148 110Q192 80 186 130Q170 120 156 138Z" fill="#d9ccf5"/><path d="M140 196Q192 204 192 168L180 176L176 164L166 178Q160 190 140 186Z" fill="#a8dcc0"/>',
     ears: '<path d="M76 66L70 34L90 60ZM124 66L130 34L110 60Z" fill="#fdeaa9"/>',
-    belly: tummy('#fdeaa9') + '<path d="M72 150H128M66 166H134M72 182H128" stroke="#f3d47e" stroke-width="2.5"/>',
-    face: '<circle cx="94" cy="116" r="2" fill="#2D1A62"/><circle cx="106" cy="116" r="2" fill="#2D1A62"/><path d="M90 124Q100 132 110 124" stroke="#2D1A62" stroke-width="2.5" fill="none" stroke-linecap="round"/>' },
+    belly: '<ellipse cx="100" cy="174" rx="36" ry="32" fill="#fdeaa9"/><path d="M72 158H128M66 172H134M72 186H128" stroke="#f3d47e" stroke-width="2.5"/>', // plus bas : les canines se voient sur le vert
+    face: cells(13, 17, ['.n..n.', 'x....x', '.xxxx.', '.w..w.'], { n: '#6FAE8C', x: LINE, w: '#FFF7FE' }) }, // narines, sourire, deux canines
   souris: { name: 'Souris', dflt: 'Gruyère', rarity: 'commun', body: '#d6cfe0', feet: '#f9c9a0',
     story: ['Gruyère habite derrière les étagères de la bibliothèque municipale.', 'La nuit, elle lit les livres que personne n\'emprunte, pour qu\'ils ne se sentent pas seuls.', 'Elle dit que les petits efforts, comme les petites souris, vont très loin.'],
     back: '<path d="M150 192Q198 198 186 158" fill="none" stroke-width="4"/>',
     ears: '<circle cx="56" cy="64" r="25" fill="#d6cfe0"/><circle cx="144" cy="64" r="25" fill="#d6cfe0"/><circle cx="56" cy="64" r="13" fill="#F4B5E8" stroke-width="2"/><circle cx="144" cy="64" r="13" fill="#F4B5E8" stroke-width="2"/>',
     belly: tummy('#f6f1fa'),
-    face: '<ellipse cx="100" cy="115" rx="5" ry="4" fill="#FF8FE6" stroke="#2D1A62" stroke-width="2"/><path d="M60 112L76 114M60 120L76 118M140 112L124 114M140 120L124 118" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: cells(14, 17, ['.pp.'], { p: '#FF4FD8' }) + smile(18) },
   mouton: { name: 'Mouton', dflt: 'Nuage', rarity: 'peuCommun', body: '#fbf7ff', feet: '#5b5372',
     story: ['Nuage compte les étudiants pour s\'endormir, au lieu de l\'inverse.', 'Sa laine est si douce qu\'on en fait des coussins pour les longues soirées de révision.', 'Il croit que tout s\'apprend en douceur, une boucle après l\'autre.'],
     ears: '<ellipse cx="42" cy="98" rx="20" ry="9" transform="rotate(-20 42 98)" fill="#5b5372"/><ellipse cx="158" cy="98" rx="20" ry="9" transform="rotate(20 158 98)" fill="#5b5372"/>',
     hair: '<g fill="#fbf7ff"><circle cx="84" cy="62" r="11"/><circle cx="100" cy="55" r="12"/><circle cx="116" cy="62" r="11"/></g>',
     belly: '<ellipse cx="100" cy="112" rx="32" ry="26" fill="#E7CFF5"/>' + tummy('#fffdfd'),
     face: '<path d="M94 116Q100 122 106 116" stroke="#2D1A62" stroke-width="2.5" fill="none" stroke-linecap="round"/>' },
-  cochon: { name: 'Cochon', dflt: 'Rosette', rarity: 'peuCommun', body: '#F4B5E8', feet: '#e48fc8',
+  cochon: { name: 'Cochon', dflt: 'Rosette', rarity: 'peuCommun', body: '#FFCCE0', feet: '#FF9EC4',
     story: ['Rosette adore se rouler dans… les fiches de révision bien rangées.', 'Elle a une tirelire en forme d\'humain, pour changer.', 'Son astuce : récompenser chaque chapitre fini par une petite fraise.'],
     back: '<path d="M158 182q18 -2 14 -14q-4 -9 -11 -3q-5 6 6 9" fill="none" stroke-width="3"/>',
-    ears: '<path d="M56 86L58 48L90 66ZM144 86L142 48L110 66Z" fill="#F4B5E8"/>',
-    belly: tummy('#FBE9FF'),
-    face: '<ellipse cx="100" cy="121" rx="15" ry="10" fill="#FF8FE6" stroke="#2D1A62" stroke-width="2.5"/><circle cx="95" cy="121" r="2.5" fill="#2D1A62"/><circle cx="105" cy="121" r="2.5" fill="#2D1A62"/>' },
+    ears: '<path d="M56 86L56 44L92 66ZM144 86L144 44L108 66Z" fill="#FFCCE0"/><path d="M62 76L62 54L82 66ZM138 76L138 54L118 66Z" fill="#FF9EC4" stroke-width="2"/>',
+    belly: tummy('#FFE6F0'),
+    // groin : un rectangle arrondi plus foncé, deux narines verticales
+    face: cells(13, 17, ['.gggg.', 'gnggng', 'gnggng', '.gggg.'], { g: '#FF9EC4', n: '#B84A86' }) },
   poussin: { name: 'Poussin', dflt: 'Citron', rarity: 'peuCommun', body: '#FFD99A', feet: '#FFC46B',
     story: ['Citron est sorti de sa coquille un lundi matin, déjà prêt à apprendre.', 'Il pépie l\'alphabet à l\'envers pour impressionner ses amis.', 'Il trouve que chaque jour est une petite éclosion.'],
     hair: '<path d="M100 58Q92 40 99 34Q103 46 108 38Q112 52 100 58Z" fill="#FFD99A"/>',
     belly: tummy('#fff3d6'),
-    face: '<path d="M93 113L107 113L100 123Z" fill="#FFC46B" stroke="#2D1A62" stroke-width="2.5" stroke-linejoin="round"/>' },
+    face: cells(14, 17, ['bbbb', '.dd.'], { b: '#FFA347', d: '#F07F2E' }) },
   chien: { name: 'Chien', dflt: 'Biscuit', rarity: 'peuCommun', body: '#e8c39e', feet: '#e8c39e',
     story: ['Biscuit rapporte les stylos que tu fais tomber sous le bureau.', 'Il a suivi un cours d\'obéissance et a fini premier de sa promo.', 'Pour lui, réviser c\'est comme une balade : on y va tous les jours.'],
     back: '<path d="M150 186Q184 178 180 148" fill="none" stroke-width="5"/>',
-    ears: '<ellipse cx="40" cy="104" rx="15" ry="32" transform="rotate(18 40 104)" fill="#a87a5a"/><ellipse cx="160" cy="104" rx="15" ry="32" transform="rotate(-18 160 104)" fill="#a87a5a"/>',
-    belly: tummy('#fbeedd'),
-    face: '<ellipse cx="100" cy="116" rx="6" ry="4.5" fill="#2D1A62"/><path d="M100 120V125M93 127Q100 132 107 127" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M97 129Q100 137 103 129Z" fill="#FF8FE6" stroke="#2D1A62" stroke-width="1.5"/>' },
-  abeille: { name: 'Abeille', dflt: 'Miel', rarity: 'peuCommun', body: '#FFD99A', feet: '#2D1A62',
+    belly: '<ellipse cx="100" cy="172" rx="34" ry="32" fill="#fbeedd"/>', // plus bas que les autres : l'os doit se détacher sur le pelage
+    // oreilles tombantes devant la tête (dessinées après le corps), un os dans la gueule
+    face: '<path d="M80 62Q50 50 30 72Q14 96 22 128Q36 132 44 114Q54 86 80 62Z" fill="#a87a5a"/><path d="M120 62Q150 50 170 72Q186 96 178 128Q164 132 156 114Q146 86 120 62Z" fill="#a87a5a"/>'
+      + cells(12, 17, ['...xx...', '........', 'oo....oo', '.oooooo.', 'oo....oo'], { x: LINE, o: '#FFF7FE' }) },
+  abeille: { name: 'Abeille', dflt: 'Miel', rarity: 'peuCommun', body: '#FFD99A', feet: '#4B1A72',
     story: ['Miel butine les fleurs du jardin et les idées de tes cahiers.', 'Elle connaît une danse pour dire où trouver les meilleures formules.', 'Sa devise : travailler ensemble, c\'est plus sucré.'],
-    back: '<ellipse cx="38" cy="116" rx="26" ry="15" transform="rotate(-30 38 116)" fill="#D9F7FF"/><ellipse cx="162" cy="116" rx="26" ry="15" transform="rotate(30 162 116)" fill="#D9F7FF"/>',
+    back: '<ellipse cx="50" cy="104" rx="17" ry="11" transform="rotate(-30 50 104)" fill="#D9F7FF"/><ellipse cx="150" cy="104" rx="17" ry="11" transform="rotate(30 150 104)" fill="#D9F7FF"/>',
     ears: '<path d="M86 60Q78 36 66 34M114 60Q122 36 134 34" fill="none" stroke-width="3"/><circle cx="66" cy="34" r="6" fill="#2D1A62"/><circle cx="134" cy="34" r="6" fill="#2D1A62"/>',
-    belly: '<path d="M44 150Q100 162 156 150L158 166Q100 178 42 166Z" fill="#2D1A62" stroke="none"/><path d="M50 184Q100 196 150 184L144 196Q100 208 56 196Z" fill="#2D1A62" stroke="none"/>',
-    face: '<path d="M90 118Q100 126 110 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
+    belly: '<path d="M48 151H152V162H48ZM54 176H146V187H54Z" fill="#2D1A62" stroke="none"/>', // rayures droites, à l'intérieur du corps
+    face: smile() },
   loutre: { name: 'Loutre', dflt: 'Galet', rarity: 'epique', body: '#b08a6e', feet: '#8e6a52',
     story: ['Galet garde toujours son caillou préféré dans sa poche de fourrure.', 'Il fait la planche sur la rivière en relisant ses notes.', 'Il te tient la main quand les révisions font des vagues.'],
     back: '<path d="M146 190Q192 196 190 168Q170 184 148 178Z" fill="#b08a6e"/>',
@@ -323,34 +332,41 @@ const SPECIES = {
     ears: '<path d="M54 92L58 46L92 66ZM146 92L142 46L108 66Z" fill="#a9a3b8"/><path d="M62 80L64 58L80 68ZM138 80L136 58L120 68Z" fill="#5b5372" stroke-width="2"/>',
     belly: tummy('#ecebf1') + '<path d="M62 102Q84 86 100 100Q116 86 138 102Q130 116 116 113Q100 106 84 113Q70 116 62 102Z" fill="#4B1A72" stroke="none"/>',
     face: '<circle cx="85.5" cy="102.5" r="1.8" fill="#fff"/><circle cx="117.5" cy="102.5" r="1.8" fill="#fff"/><ellipse cx="100" cy="120" rx="5" ry="3.5" fill="#2D1A62"/><path d="M100 123Q96 129 91 126M100 123Q104 129 109 126" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
-  licorne: { name: 'Licorne', dflt: 'Opaline', rarity: 'legendaire', body: '#FBE9FF', feet: '#E7CFF5',
+  licorne: { name: 'Licorne', dflt: 'Opaline', rarity: 'legendaire', body: '#FFFAFF', feet: '#BFF6FF',
     story: ['Opaline est née au bout d\'un arc-en-ciel, entre deux nuages de craie.', 'Sa corne s\'allume doucement quand quelqu\'un comprend enfin un exercice.', 'Elle n\'apparaît qu\'à ceux qui croient en leurs rêves… et en leurs fiches.'],
-    ears: '<path d="M60 86L60 50L88 66ZM140 86L140 50L112 66Z" fill="#FBE9FF"/>',
-    hair: '<path d="M94 60L100 20L106 60Z" fill="#FFD99A"/><path d="M96 48L104 44M95 55L105 51" stroke="#FFC46B" stroke-width="2"/><path d="M114 58Q140 50 142 74Q152 72 154 88Q138 86 130 76Z" fill="#FF8FE6"/>',
-    belly: tummy('#fff7fd'),
-    face: '<path d="M90 120Q100 128 110 120" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
-  phenix: { name: 'Phénix', dflt: 'Étincelle', rarity: 'legendaire', body: '#FFC46B', feet: '#FF8FE6',
+    ears: '<circle cx="64" cy="66" r="15" fill="#FFFAFF"/><circle cx="136" cy="66" r="15" fill="#FFFAFF"/><circle cx="64" cy="66" r="7" fill="#F4B5E8" stroke-width="2"/><circle cx="136" cy="66" r="7" fill="#F4B5E8" stroke-width="2"/>',
+    // corne cyan rayée et mèche arc-en-ciel sur le front
+    hair: cells(14, 2, ['.bb.', '.lb.', 'blbb', 'bbbl', 'blbb', 'bbbl'], { b: '#4FE3FF', l: '#D9F7FF' })
+      + cells(13, 8, ['....rroo.', '..rrooyyg', '.rrooyyggb', '....yyggbb', '......bbvv'], { r: '#FF6FA8', o: '#FFA94D', y: '#FFE27A', g: '#8EE08A', b: '#4FE3FF', v: '#B98CFF' }),
+    belly: tummy('#ffffff'),
+    face: smile() },
+  phenix: { name: 'Phénix', dflt: 'Étincelle', rarity: 'legendaire', body: '#FF9A3C', feet: '#FFC46B',
     story: ['Étincelle renaît de ses cendres, et toi de tes mauvaises notes.', 'Ses plumes réchauffent la chambre les soirs d\'hiver.', 'Il sait qu\'un échec n\'est qu\'un nouveau départ, plus fort.'],
-    back: '<path d="M48 112Q2 68 10 138Q26 124 40 144Z" fill="#FF8FE6"/><path d="M152 112Q198 68 190 138Q174 124 160 144Z" fill="#FF8FE6"/><path d="M140 196Q186 206 196 176Q178 182 168 172Q162 190 140 186Z" fill="#FF4FD8"/>',
-    hair: '<path d="M92 58Q84 34 95 26Q98 42 104 30Q114 44 108 58Z" fill="#FF8FE6"/>',
+    // ailes levées en V et flammes à ses pieds
+    back: '<path d="M56 128Q22 112 6 20Q26 42 42 46Q36 66 52 76Q46 94 62 100Z" fill="#F2553A"/><path d="M144 128Q178 112 194 20Q174 42 158 46Q164 66 148 76Q154 94 138 100Z" fill="#F2553A"/>'
+      + '<path d="M54 120Q30 104 20 50Q34 70 46 92Z" fill="#FFC46B" stroke="none"/><path d="M146 120Q170 104 180 50Q166 70 154 92Z" fill="#FFC46B" stroke="none"/>'
+      + '<path d="M50 214Q14 206 20 166Q30 182 38 178Q32 156 44 144Q50 172 60 186Z" fill="#F2553A"/><path d="M150 214Q186 206 180 166Q170 182 162 178Q168 156 156 144Q150 172 140 186Z" fill="#F2553A"/>'
+      + '<path d="M46 210Q26 202 30 182Q40 194 50 190Z" fill="#FFC46B" stroke="none"/><path d="M154 210Q174 202 170 182Q160 194 150 190Z" fill="#FFC46B" stroke="none"/>',
+    hair: '<path d="M88 60Q80 40 88 28Q94 44 100 18Q106 44 112 28Q120 40 112 60Z" fill="#F2553A"/><path d="M94 58Q92 46 100 36Q108 46 106 58Z" fill="#FFC46B" stroke="none"/>',
     belly: tummy('#FFD99A'),
-    face: '<path d="M94 115L106 115L100 127Z" fill="#FFD99A" stroke="#2D1A62" stroke-width="2.5" stroke-linejoin="round"/>' },
+    face: cells(14, 17, ['bbbb', '.dd.'], { b: '#FFE9A0', d: '#FFC46B' }) },
   kitsune: { name: 'Kitsune', dflt: 'Lumen', rarity: 'mythique', body: '#FBE9FF', feet: '#BFF6FF',
-    story: ['Lumen est un esprit-renard qui veille sur les lanternes des bibliothèques.', 'Chaque queue représente cent ans de sagesse… et elle en a déjà trois.', 'Elle te prête un peu de sa lumière quand tes yeux fatiguent.'],
-    back: '<g fill="#FBE9FF"><path d="M140 196Q200 196 194 140Q184 120 168 144Q166 180 140 186Z"/><path d="M140 196Q206 176 182 120Q168 104 160 132Q170 170 140 186Z" transform="rotate(-24 150 190)"/></g><path d="M194 140Q184 120 172 136Q182 142 194 140Z" fill="#4FE3FF" stroke-width="2.5"/>',
+    story: ['Lumen est un esprit-renard qui veille sur les lanternes des bibliothèques.', 'Chaque queue représente cent ans de sagesse… et elle en a déjà quatre.', 'Elle te prête un peu de sa lumière quand tes yeux fatiguent.'],
+    back: [0, 1].map(m => `<g${m ? ' transform="matrix(-1 0 0 1 200 0)"' : ''}><g fill="#FBE9FF"><path d="M140 196Q200 196 194 140Q184 120 168 144Q166 180 140 186Z"/><path d="M140 196Q206 176 182 120Q168 104 160 132Q170 170 140 186Z" transform="rotate(-24 150 190)"/></g><path d="M194 140Q184 120 172 136Q182 142 194 140Z" fill="#4FE3FF" stroke-width="2.5"/></g>`).join(''), // deux queues de chaque côté
     ears: '<path d="M52 96L52 32L96 64ZM148 96L148 32L104 64Z" fill="#FBE9FF"/><path d="M58 80L58 46L80 62ZM142 80L142 46L120 62Z" fill="#8FF0FF" stroke-width="2"/>',
     belly: tummy('#ffffff'),
-    face: '<path d="M74 92L66 86M126 92L134 86" stroke="#FF4FD8" stroke-width="3" stroke-linecap="round"/><ellipse cx="100" cy="116" rx="5" ry="3.5" fill="#2D1A62"/><path d="M100 119Q96 125 91 122M100 119Q104 125 109 122" stroke="#2D1A62" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: '<path d="M74 92L66 86M126 92L134 86" stroke="#FF4FD8" stroke-width="3" stroke-linecap="round"/>'
+      + cells(13, 17, ['..pp..', 'x.xx.x', '.x..x.'], { p: '#FF4FD8', x: LINE }) }, // museau de chat en « w »
   nebuleuse: { name: 'Chat cosmique', dflt: 'Nébuleuse', rarity: 'mythique', body: '#4B1A72', feet: '#7A2380',
     story: ['Nébuleuse est tombée d\'une étoile filante, un soir de grande révision.', 'Elle ronronne à la fréquence exacte de la concentration.', 'Dans sa fourrure, on peut voir toutes les constellations que tu as apprises.'],
     back: '<path d="M140 190Q190 194 184 146Q182 130 170 134Q174 172 138 176Z" fill="#4B1A72"/>',
     ears: '<path d="M52 96L56 40L96 64ZM148 96L144 40L104 64Z" fill="#4B1A72"/><path d="M62 84L63 56L84 68ZM138 84L137 56L116 68Z" fill="#FF4FD8"/>',
     belly: tummy('#7A2380') + `<path d="${star(82, 158, 6)}" fill="#FFD99A" stroke="none"/><path d="${star(116, 176, 5)}" fill="#FFD99A" stroke="none"/><circle cx="104" cy="148" r="2" fill="#BFF6FF" stroke="none"/><circle cx="88" cy="186" r="2" fill="#BFF6FF" stroke="none"/>`,
-    face: '<circle cx="84" cy="104" r="7" fill="#4FE3FF"/><circle cx="116" cy="104" r="7" fill="#4FE3FF"/><circle cx="84" cy="104" r="3.5" fill="#110927"/><circle cx="116" cy="104" r="3.5" fill="#110927"/><path d="M96 113H104L100 118Z" fill="#FF8FE6"/><path d="M100 118Q96 124 91 121M100 118Q104 124 109 121M56 111L74 114M56 121L74 118M144 111L126 114M144 121L126 118" stroke="#D9BDEE" stroke-width="2" fill="none" stroke-linecap="round"/>' },
+    face: '<circle cx="84" cy="104" r="7" fill="#4FE3FF"/><circle cx="116" cy="104" r="7" fill="#4FE3FF"/><path d="M96 113H104L100 118Z" fill="#FF8FE6"/><path d="M100 118Q96 124 91 121M100 118Q104 124 109 121M56 111L74 114M56 121L74 118M144 111L126 114M144 121L126 118" stroke="#D9BDEE" stroke-width="2" fill="none" stroke-linecap="round"/>' },
   sylve: { name: 'Esprit du jardin', dflt: 'Sylve', rarity: 'mythique', body: '#BFF6FF', feet: '#8FF0FF',
-    story: ['Sylve est née dans un pot de fleurs oublié sur le rebord de ta fenêtre.', 'Chaque minute de révision fait pousser une nouvelle feuille sur sa tête.', 'Le jour où tu réussiras ton examen, elle fleurira en entier.'],
+    story: ['Sylve est née dans un pot de fleurs oublié sur le rebord de ta fenêtre.', 'Chaque minute de révision fait grandir le petit champignon sur sa tête.', 'Le jour où tu réussiras ton examen, elle fleurira en entier.'],
     back: '<circle cx="30" cy="84" r="7" fill="#FFD99A"/><circle cx="172" cy="66" r="5" fill="#FFD99A"/><circle cx="182" cy="110" r="4" fill="#FFD99A"/>',
-    hair: '<path d="M100 58V40" fill="none" stroke-width="3"/><path d="M100 44Q84 30 76 40Q88 50 100 44Z" fill="#a8d89a"/><path d="M100 40Q116 24 126 34Q112 46 100 40Z" fill="#a8d89a"/>',
+    hair: cells(12, 3, ['..mmmm..', '.mmwmmmm', 'mmmmmmwm', 'mwmmmmmm', '...ss...', '...ss...'], { m: '#FF4FD8', w: '#FFF7FE', s: '#FFF7FE' }), // petit champignon
     belly: tummy('#eafcff') + flowers([[100, 166]]),
     face: '<path d="M90 118Q100 126 110 118" stroke="#2D1A62" stroke-width="3" fill="none" stroke-linecap="round"/>' },
   // la petite amie du pingouin (pas adoptable, se débloque à part)
@@ -469,7 +485,7 @@ async function pixPet(sp, eq) {
   const px = X => 1 + Math.floor(X * PET_N / 200), py = Y => 1 + Math.floor(Y * PET_M / 220);
   const ex = px(84), ey = py(104), kx = px(68), ky = py(122), shut = g.map(() => null);
   for (const x0 of [ex - 1, W - 1 - ex]) { // yeux 2 × 2 avec un reflet ; clairs sur une tache foncée (panda, raton)
-    const under = g[ey * W + x0], dark = under && luma(under) < 90;
+    const under = g[ey * W + (x0 < W / 2 ? x0 + 1 : x0)], dark = under && luma(under) < 90; // la case intérieure des deux côtés, sinon les deux yeux diffèrent
     for (const a of [0, 1]) { // yeux fermés (clignement, sommeil) : la couleur d'en dessous, puis un trait
       const k = (ey - 1) * W + x0 + a;
       if (g[k]) { shut[k] = g[k]; shut[k + W] = dark ? mixHex(under, '#FFFFFF', .45) : LINE; }
