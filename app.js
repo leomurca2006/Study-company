@@ -579,7 +579,7 @@ function say(kind) { // tirage au hasard, jamais deux fois la même réplique d'
     ...(j <= CFG.examSoon ? LINES.exam : [])];
   const pool = [...LINES[kind], ...extra]
     .map(l => l.replace('{n}', nameOf(S.species)).replace('{p}', nameOf('pingouine'))
-      .replace('{e}', ex ? subName(ex.sub) : '').replace('{quand}', j === 1 ? 'demain' : `dans ${j} jours`)).filter(l => l !== bubble);
+      .replace('{e}', ex ? ex.title || subName(ex.sub) : '').replace('{quand}', j === 1 ? 'demain' : `dans ${j} jours`)).filter(l => l !== bubble);
   bubble = pool[Math.floor(Math.random() * pool.length)]; bubbleAt = Date.now();
 }
 const talk = () => say('idle');
@@ -1701,7 +1701,7 @@ function renderStats() {
       : !j ? 'C\'est aujourd\'hui ! Respire un grand coup, tout va bien se passer 🍀'
       : `Il te reste ${j} jour${j > 1 ? 's' : ''} et ${fmtMin(left)} de révision prévues pour atteindre ton objectif, soit environ ${fmtMin(left / j)} par jour.`;
     return `<div class="mission"><span class="countdown">${j > 1 ? `J-${j}` : j === 1 ? 'Demain' : !j ? 'Jour J' : 'Passé'}</span><div class="info">
-      <b>${esc(subName(x.sub))}</b> · <small>${dayLabel(x.date, { weekday: 'long', day: 'numeric', month: 'long' })}</small>
+      <b>${esc(x.title || subName(x.sub))}</b>${x.title ? ` · ${esc(subName(x.sub))}` : ''} · <small>${dayLabel(x.date, { weekday: 'long', day: 'numeric', month: 'long' })}</small>
       <div class="progress" role="progressbar" aria-label="Révision pour l'examen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(r * 100)}"><i style="width:${r * 100}%"></i></div>
       <small>${fmtMin(done)} / ${x.hours} h · ${advice}</small></div>
       <button class="del" data-exam-del="${x.id}" aria-label="Supprimer l'examen">🗑️</button></div>`;
@@ -2260,7 +2260,8 @@ $('#examForm').addEventListener('submit', e => {
   if (!sub) return toast('Ajoute d\'abord une matière (onglet Matières) 📚');
   if (!date || daysTo(date) < 1) return toast('Choisis une date à partir de demain 📅');
   if (!(hours >= 1 && hours <= 200)) return toast('Objectif : entre 1 et 200 heures');
-  S.exams.push({ id: Date.now(), sub, date, hours, from: today() }); save(); renderAll();
+  const title = $('#examTitle').value.trim();
+  S.exams.push({ id: Date.now(), sub, date, hours, from: today(), ...(title && { title }) }); $('#examTitle').value = ''; save(); renderAll();
 });
 $('#todoForm').addEventListener('submit', e => {
   e.preventDefault();
